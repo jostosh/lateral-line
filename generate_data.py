@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import six.moves.cPickle as pickle
-import matplotlib.animation as animation
 from scipy import ndimage
 import os
+from mpl_toolkits.mplot3d import Axes3D
 
-from latline.experiment_config import DataConfig, parse_data_config_args
+from latline.experiment_config import DataConfig, parse_config_args
 from latline.latline import Latline
 
 from matplotlib import rc
@@ -26,8 +25,8 @@ def distanceToIdx(d, range_d, maxi):
 def generateData(N, x_range, y_range, z_range, v, d_theta_range, z_res, sigma, N_sensors, sensor_range,
                  display, tau=2):
     # pre-alloc data and labels
-    data    = np.zeros((2, N, tau, N_sensors))
-    targets  = np.zeros((2, N, z_res, 1, N_sensors))
+    data    = np.zeros((N, 2, N_sensors, tau))
+    targets  = np.zeros((N, 2, N_sensors, z_res))
     zz_labels = np.zeros((N, N_sensors, N_sensors, z_res))
 
     # s should be interpreted as in Boulogne et al (2015)
@@ -51,15 +50,11 @@ def generateData(N, x_range, y_range, z_range, v, d_theta_range, z_res, sigma, N
     latline = Latline(x_range=x_range, y_range=y_range, z_range=z_range, d_theta_range=d_theta_range,
                       sensor_range=sensor_range, n_sensors=N_sensors, min_spheres=1, max_spheres=2, v=v)
 
-    plot_3d = True
-
-    if plot_3d:
+    if display:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         #ax2 = fig.add_subplot(312)
         #ax3 = fig.add_subplot(313)
-    else:
-        fig2, axarr = plt.subplots(4, 6, sharex=True, sharey=True)
 
     buff_x = []
     buff_y = []
@@ -90,10 +85,10 @@ def generateData(N, x_range, y_range, z_range, v, d_theta_range, z_res, sigma, N
             del buff_x[0]
             del buff_y[0]
 
-            data[0][i - tau] = buff_x
-            data[1][i - tau] = buff_y
-            targets[0][i - tau] = fx1_.reshape((z_res, 1, N_sensors))
-            targets[1][i - tau] = fx2_.reshape((z_res, 1, N_sensors))
+            data[i - tau][0] = np.transpose(buff_x)
+            data[i - tau][1] = np.transpose(buff_y)
+            targets[i - tau][0] = np.transpose(fx1_.reshape((z_res, N_sensors)))
+            targets[i - tau][1] = np.transpose(fx2_.reshape((z_res, N_sensors)))
 
         if display:
 
@@ -193,7 +188,7 @@ def generateData(N, x_range, y_range, z_range, v, d_theta_range, z_res, sigma, N
     return data, targets, zz_labels
 
 if __name__ == "__main__":
-    config = DataConfig(parse_data_config_args())
+    config = DataConfig(parse_config_args(mode='data'))
 
     # Sigma for Gaussians around spheres.
     sigma = 0.2
@@ -202,23 +197,25 @@ if __name__ == "__main__":
     train_data, train_labels, zz_    = generateData(N=config.N_train, x_range=config.x_range, y_range=config.y_range,
                                                     z_range=config.z_range, v=config.v, d_theta_range=config.d_theta_range,
                                                     z_res=config.z_res, sigma=config.sigma, N_sensors=config.N_sensors,
-                                                    sensor_range=config.sensor_range, display=config.display)
+                                                    sensor_range=config.sensor_range, display=config.display,
+                                                    tau=config.tau)
     test_data, test_labels, _      = generateData(N=config.N_test, x_range=config.x_range, y_range=config.y_range,
                                                   z_range=config.z_range, v=config.v, d_theta_range=config.d_theta_range,
                                                   z_res=config.z_res, sigma=config.sigma, N_sensors=config.N_sensors,
-                                                  sensor_range=config.sensor_range, display=config.display)
+                                                  sensor_range=config.sensor_range, display=config.display,
+                                                  tau=config.tau)
     val_data, val_labels, _        = generateData(N=config.N_val, x_range=config.x_range, y_range=config.y_range,
                                                   z_range=config.z_range, v=config.v, d_theta_range=config.d_theta_range,
                                                   z_res=config.z_res, sigma=config.sigma, N_sensors=config.N_sensors,
-                                                  sensor_range=config.sensor_range, display=config.display)
+                                                  sensor_range=config.sensor_range, display=config.display,
+                                                  tau=config.tau)
 
     print('Max: ', np.max(train_data), np.min(train_data))
     print('Mean: ', np.mean(train_data))
 
+    project_folder = os.path.dirname(os.path.realpath(__file__))
+
     # Serialize the data
-    with open(os.path.join(os.path.expanduser('~'), 'lateral-line/latline/data/multisphere_tori_frame.pickle'), 'wb') \
-            as data_file:
-        pickle.dump([train_data, train_labels,
-                     test_data, test_labels,
-                     val_data, val_labels],
-                    data_file)
+    os.makedirs(os.path.join(project_folder, 'data'), exist_ok=True)
+    with open(os.path.join(project_folder, 'data', 'multisphere_parallel.pickle'), 'wb') as f:
+        pickle.dump([train_data, train_labels, test_data, test_labels, val_data, val_labels], f)
