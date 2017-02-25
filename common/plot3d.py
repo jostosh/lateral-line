@@ -2,7 +2,6 @@ import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage
-from latline.plot3d import distanceToIdx
 from matplotlib import rc
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica'], 'size': 14})
@@ -184,3 +183,8 @@ def plot_excitation(ax, fluid_v0, fluid_v1, s, width):
     """
     ax.bar(s, fluid_v0 * 5, zs=-.5, zdir='y', color='b', width=width, alpha=0.5)
     ax.bar(s, fluid_v1 * 5, zs=.5, zdir='y', color='r', width=width, alpha=0.5)
+
+
+def distanceToIdx(d, range_d, maxi):
+    idx = np.asarray((d - range_d[0]) / (range_d[1] - range_d[0]) * maxi)
+    return np.minimum(np.maximum(idx, 0), maxi-1)
