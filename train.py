@@ -33,8 +33,7 @@ def train(config):
     # This should be added to our list of n_kernels
     config.n_kernels += [output_depth]
 
-    # Now we can set up the network
-    # First we define the input placeholders
+    # Now we can set up the network. First we define the input placeholders
     excitation0, excitation1 = define_inputs((None,) + train_x.shape[-2:])
 
     # Then, we define the network giving us the output
@@ -48,11 +47,11 @@ def train(config):
     train_step, global_step = define_train_step(loss)
 
     # Initialize writer for TensorBoard logging
-    logdir = init_log_dir(config.logdir)
-    train_writer = tf.summary.FileWriter(os.path.join(logdir, 'train'), sess.graph)
-    test_writer = tf.summary.FileWriter(os.path.join(logdir, 'test'), sess.graph)
-    train_summary = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES + '/train'))
-    test_summary = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES + '/test'))
+    logdir = init_log_dir(config)
+    train_writer    = tf.summary.FileWriter(os.path.join(logdir, 'train'), sess.graph)
+    test_writer     = tf.summary.FileWriter(os.path.join(logdir, 'test'), sess.graph)
+    train_summary   = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES + '/train'))
+    test_summary    = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES + '/test'))
 
     # Set the number of batches inside a single train iteration
     n_batches = int(np.ceil(train_x.shape[0] / config.batch_size))

@@ -90,15 +90,15 @@ class DataConfig(object):
         self.tau = args.tau
 
 
-def init_log_dir(base, config=None, by_params=['merge_at', 'tau']):
+def init_log_dir(config, by_params=['merge_at']):
     """
     Automatically creates a logging dir for TensorBoard logging
-    :param base:        Base logging dir
     :param config:      ExperimentConfig object
     :param by_params:   List of params to use in the generation of the particular TensorBoard logging directory
     :return:            The newly created logging dir
     """
-    if config:
+    base = config.logdir
+    if by_params:
         base = os.path.join(base, *['{}={}'.format(p, config.__dict__[p]) for p in by_params])
 
     os.makedirs(base, exist_ok=True)
