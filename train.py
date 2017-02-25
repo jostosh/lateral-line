@@ -1,9 +1,11 @@
 import os
 import pickle
+
 import numpy as np
 import tensorflow as tf
 from tqdm import trange
-from data_util import DataBatcher
+
+from common.data_util import DataBatcher
 from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
 from latline.layers import conv_chain
 

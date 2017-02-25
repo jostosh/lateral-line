@@ -1,12 +1,14 @@
 import os
+from collections import deque
+
 import matplotlib.pyplot as plt
 import numpy as np
 import six.moves.cPickle as pickle
+from tqdm import trange
+
+from common.plot3d import plot3d
 from latline.experiment_config import DataConfig, parse_config_args
 from latline.latline import Latline
-from plot3d import plot3d
-from tqdm import trange
-from collections import deque
 
 
 def generate_data(N_examples, x_range, y_range, z_range, v, d_theta_range, resolution, sigma, N_sensors, sensor_range,
