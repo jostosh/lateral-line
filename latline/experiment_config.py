@@ -90,11 +90,21 @@ class DataConfig(object):
         self.tau = args.tau
 
 
-def init_log_dir(base):
+def init_log_dir(base, config=None, by_params=['merge_at', 'tau']):
+    """
+    Automatically creates a logging dir for TensorBoard logging
+    :param base:        Base logging dir
+    :param config:      ExperimentConfig object
+    :param by_params:   List of params to use in the generation of the particular TensorBoard logging directory
+    :return:            The newly created logging dir
+    """
+    if config:
+        base = os.path.join(base, *['{}={}'.format(p, config.__dict__[p]) for p in by_params])
+
     os.makedirs(base, exist_ok=True)
     dirs = os.listdir(base)
 
-    logdir = os.path.join(base, 'run%03d' % (int(sorted(dirs)[-1][-3:]) + 1,) if dirs else 'run000')
+    logdir = os.path.join(base, 'run%04d' % (int(sorted(dirs)[-1][-4:]) + 1,) if dirs else 'run0000')
     os.makedirs(logdir)
 
     return logdir
