@@ -1,16 +1,22 @@
 import os
 import pickle
-
 import numpy as np
 import tensorflow as tf
 from tqdm import trange
-
 from data_util import DataBatcher
 from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
 from latline.layers import conv_chain
 
 
 def train(config):
+    """
+    Trains a convolutional neural network to locate multiple spheres in a simulated artificial lateral line experiment.
+    Currently, this implementation is a port from the original Theano implementation, which is why it still misses some
+    functionality that is mentioned in the current version of the paper.
+    :param config:  Experiment config generated from command line input.
+    :return:
+    """
+
     # Create TensorFlow session
     sess = tf.Session()
 
@@ -24,14 +30,14 @@ def train(config):
     # We take the output depth from the target data
     output_depth = train_y.shape[-1] * train_y.shape[1]
     # This should be added to our list of n_kernels
-    n_kernels = config.n_kernels + [output_depth]
+    config.n_kernels += [output_depth]
 
     # Now we can set up the network
     # First we define the input placeholders
     excitation0, excitation1 = define_inputs((None,) + train_x.shape[-2:])
 
     # Then, we define the network giving us the output
-    out = define_network(config, excitation0, excitation1, n_kernels)
+    out = define_network(config, excitation0, excitation1)
 
     # Next, we define, the loss that depends on the error + some L2 regularization of the weights
     # For reporting performance, the MSE is used
@@ -63,7 +69,7 @@ def train(config):
         test_x, test_y = data_batcher_test.next_batch()
         print("Test MSE: {}".format(
             sess.run(mse, feed_dict={excitation0: test_x[:, 0, :, :], excitation1: test_x[:, 1, :, :],
-                                      target: test_y})))
+                                     target: test_y})))
 
 
 def read_data(config):
@@ -71,7 +77,7 @@ def read_data(config):
     Reads in the data
     """
     with open(config.data, 'rb') as f:
-        train_x, train_y, test_x, test_y, val_x, val_y = pickle.load(f)
+        train_x, train_y, test_x, test_y = pickle.load(f)
     return test_x, test_y, train_x, train_y
 
 
@@ -103,7 +109,7 @@ def define_loss(out, train_y):
     return loss, mse, target
 
 
-def define_network(config, excitation0, excitation1, n_kernels):
+def define_network(config, excitation0, excitation1):
     """
     Builds the body of the network
     :param config: An ExperimentConfig instance.
@@ -115,19 +121,19 @@ def define_network(config, excitation0, excitation1, n_kernels):
 
     with tf.variable_scope("SharedStreams") as scope:
         # Build the first chain
-        chain0 = conv_chain(excitation0, n_kernels[:config.merge_at], config.kernel_shapes[:config.merge_at],
+        chain0 = conv_chain(excitation0, config.n_kernels[:config.merge_at], config.kernel_shapes[:config.merge_at],
                             config.activations[:config.merge_at])
         # Reuse the variables of this chain
         scope.reuse_variables()
         # And define the second chain
-        chain1 = conv_chain(excitation1, n_kernels[:config.merge_at], config.kernel_shapes[:config.merge_at],
+        chain1 = conv_chain(excitation1, config.n_kernels[:config.merge_at], config.kernel_shapes[:config.merge_at],
                             config.activations[:config.merge_at])
     with tf.name_scope("MergedStream"):
         # Now we merge these to define the input for the last few layers
         convs_concat = tf.concat(2, [chain0, chain1], name='ConvsConcat')
     with tf.variable_scope("Output"):
         # Finally, we define the output of the network using the layer parameters for those after the merge
-        out = conv_chain(convs_concat, n_kernels[config.merge_at:], config.kernel_shapes[config.merge_at:],
+        out = conv_chain(convs_concat, config.n_kernels[config.merge_at:], config.kernel_shapes[config.merge_at:],
                          config.activations[config.merge_at:], count_from=config.merge_at)
     return out
 
