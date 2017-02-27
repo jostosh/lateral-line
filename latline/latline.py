@@ -8,18 +8,12 @@ class Latline(object):
     fluid velocities are captured by a horizontal sensor grid
     """
 
-    def __init__(self, x_range, y_range, z_range, d_theta_range, sensor_range, n_sensors, min_spheres, max_spheres, v=0.05):
+    def __init__(self, cfg):
 
-        self.spheres = []
-        self.max = max_spheres
-        self.min = min_spheres
-        sphere_flags = np.random.binomial(1, 0.5, max_spheres)
-        while not sphere_flags.any():
-            sphere_flags = np.random.binomial(1, 0.5, max_spheres)
-
-        for flag in sphere_flags:
-            if flag:
-                self.spheres.append(Sphere(x_range, y_range, z_range, d_theta_range, sensor_range, n_sensors, v))
+        self.max = cfg.max_spheres
+        self.min = cfg.min_spheres
+        self.spheres = [Sphere(cfg) for _ in range(np.random.randint(cfg.min_spheres, cfg.max_spheres))]
+        self.cfg = cfg
 
     def step(self):
         if np.random.uniform(0, 1) > 0.95:
@@ -28,7 +22,7 @@ class Latline(object):
 
         if np.random.uniform(0, 1) > 0.95:
             if len(self.spheres) < self.max:
-                self.spheres.append(Sphere([-1, 1], [-1, 1], [0, 1.5], [-1, 1], [-1.5, 1.5], 32, 0.05))
+                self.spheres.append(Sphere(cfg))
 
         for sphere in self.spheres:
             sphere.step()
@@ -40,4 +34,4 @@ class Latline(object):
         ys = [sph.y for sph in self.spheres]
         zs = [sph.z for sph in self.spheres]
 
-        return xs, ys, zs, fluid_v_0 * 1000, fluid_v_1 * 1000 # todo: why * 1000?
+        return xs, ys, zs, fluid_v_0, fluid_v_1

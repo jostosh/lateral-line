@@ -11,8 +11,7 @@ from latline.experiment_config import DataConfig, parse_config_args
 from latline.latline import Latline
 
 
-def generate_data(N_examples, x_range, y_range, z_range, v, d_theta_range, resolution, sigma, N_sensors, sensor_range,
-                  display, tau=2, mode='train'):
+def generate_data(cfg, mode='train'):
     """
     This function generates the simulated sensor data given the following parameters:
 
@@ -34,15 +33,17 @@ def generate_data(N_examples, x_range, y_range, z_range, v, d_theta_range, resol
     Return:
         :return Two multi-dimensional arrays containing the train data and the output targets, respectively
     """
+    N_examples = cfg.N_train if mode == 'train' else cfg.N_test
+
     # pre-alloc data and labels
-    data    = np.zeros((N_examples, 2, N_sensors, tau))
-    targets  = np.zeros((N_examples, 2, N_sensors, resolution))
+    data    = np.zeros((N_examples, 2, cfg.N_sensors, cfg.tau))
+    targets  = np.zeros((N_examples, 2, cfg.N_sensors, cfg.resolution))
 
     # s should be interpreted as in Boulogne et al (2015)
-    s = np.linspace(sensor_range[0], sensor_range[1], N_sensors)
+    s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.N_sensors)
     x_grid = s
     y_grid = s
-    z_grid = np.linspace(z_range[0], z_range[1], resolution)
+    z_grid = np.linspace(cfg.z_range[0], cfg.z_range[1], cfg.resolution)
 
     # xx and yy are matrices for evaluating a Gaussian that is centered at a sphere
     # xx, yy, zz = np.meshgrid(x_grid, y_grid, z_grid)
@@ -52,10 +53,9 @@ def generate_data(N_examples, x_range, y_range, z_range, v, d_theta_range, resol
     x_mesh3d, y_mesh3d, z_mesh3d = np.meshgrid(x_grid, y_grid, z_grid)
 
     # Init lateral line for train data
-    latline = Latline(x_range=x_range, y_range=y_range, z_range=z_range, d_theta_range=d_theta_range,
-                      sensor_range=sensor_range, n_sensors=N_sensors, min_spheres=1, max_spheres=2, v=v)
+    latline = Latline(cfg)
 
-    if display:
+    if cfg.display:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -64,40 +64,39 @@ def generate_data(N_examples, x_range, y_range, z_range, v, d_theta_range, resol
     buffer1 = deque()
 
     # Loop through all data points
-    t = trange(N_examples + tau)
+    t = trange(N_examples + cfg.tau)
     t.set_description("Generating {} data".format(mode))
     for i in t:
         # Obtain x and y locations of all spheres and the corresponding sensor measurements
-        xs, ys, zs, fluid_v_x, fluid_v_y = latline.step()  # xs' rows correspond to the spheres
+        xs, ys, zs, fluid_v0, fluid_v1 = latline.step()  # xs' rows correspond to the spheres
 
         # Compute each Gaussian separately
         target0 = np.asarray([np.exp(-((x_mesh2d - xi) ** 2 + (target_mesh - np.sqrt((yi+0.5)**2 + zi**2)) ** 2)
-                                     / (2 * sigma**2))
+                                     / (2 * cfg.sigma**2))
                               for (xi, yi, zi) in zip(xs, ys, zs)])
         target1 = np.asarray([np.exp(-((x_mesh2d - xi) ** 2 + (target_mesh - np.sqrt((yi-0.5)**2 + zi**2)) ** 2)
-                                     / (2 * sigma**2))
+                                     / (2 * cfg.sigma**2))
                               for (xi, yi, zi) in zip(xs, ys, zs)])
         # And then take the maximum over all spheres.
         target0 = np.max(target0, axis=0)
         target1 = np.max(target1, axis=0)
 
         # Save measurements and heatmap
-        buffer0.append(fluid_v_x)
-        buffer1.append(fluid_v_y)
+        buffer0.append(fluid_v0)
+        buffer1.append(fluid_v1)
 
-        if i >= tau:
+        if i >= cfg.tau:
             buffer0.popleft()
             buffer1.popleft()
 
-            data[i - tau][0] = np.transpose(buffer0)
-            data[i - tau][1] = np.transpose(buffer1)
-            targets[i - tau][0] = np.transpose(target0.reshape((resolution, N_sensors)))
-            targets[i - tau][1] = np.transpose(target1.reshape((resolution, N_sensors)))
+            data[i - cfg.tau][0] = np.transpose(buffer0)
+            data[i - cfg.tau][1] = np.transpose(buffer1)
+            targets[i - cfg.tau][0] = np.transpose(target0.reshape((cfg.resolution, cfg.N_sensors)))
+            targets[i - cfg.tau][1] = np.transpose(target1.reshape((cfg.resolution, cfg.N_sensors)))
 
-        if display:
+        if cfg.display:
             # Plot the situation in 3D
-            plot3d(N_sensors, ax, fluid_v_x, fluid_v_y, latline, s, sensor_range, target0, target1, x_mesh3d, xs,
-                   y_mesh3d, ys, z_mesh3d, z_range, resolution, zs)
+            plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d, latline, s, target0, target1)
 
     return data, targets
 
@@ -109,16 +108,8 @@ if __name__ == "__main__":
     config = DataConfig(parse_config_args(mode='data'))
 
     # Obtain data for train, test and validation sets
-    train_data, train_labels = generate_data(N_examples=config.N_train, x_range=config.x_range, y_range=config.y_range,
-                                             z_range=config.z_range, v=config.v, d_theta_range=config.d_theta_range,
-                                             resolution=config.z_res, sigma=config.sigma, N_sensors=config.N_sensors,
-                                             sensor_range=config.sensor_range, display=config.display,
-                                             tau=config.tau, mode='train')
-    test_data, test_labels = generate_data(N_examples=config.N_test, x_range=config.x_range, y_range=config.y_range,
-                                           z_range=config.z_range, v=config.v, d_theta_range=config.d_theta_range,
-                                           resolution=config.z_res, sigma=config.sigma, N_sensors=config.N_sensors,
-                                           sensor_range=config.sensor_range, display=config.display,
-                                           tau=config.tau, mode='test')
+    train_data, train_labels = generate_data(config, mode='train')
+    test_data, test_labels = generate_data(config, mode='test')
     project_folder = os.path.dirname(os.path.realpath(__file__))
 
     # Serialize the data

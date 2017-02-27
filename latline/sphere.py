@@ -2,36 +2,30 @@ import numpy as np
 from latline.wavelets import even_wavelet, odd_wavelet
 
 class Sphere(object):
-    '''
+    """
     This class implements a simulated sphere. it includes the functions to compute the next position in the simulation
     and to compute the corresponding fluid velocities as measured by the lateral line sensors.
-    '''
+    """
 
-    def __init__(self, x_range, y_range, z_range, d_theta_range, sensor_range, n_sensors, v=0.05, a=0.05):
-        '''
+    def __init__(self, cfg):
+        """
         Initializes a sphere.
-        :param x_range: range of x-values
-        :param y_range: range of y-values
-        :param d_theta_range: range of theta (angle w.r.t y=0)
-        :param sensor_range: x-range of sensor grid
-        :param n_sensors: number of sensors
-        :param v: speed of a sphere
-        :param a: radius of the sphere
-        '''
-        self.x = np.random.uniform(x_range[0], x_range[1])
-        self.y = np.random.uniform(y_range[0], y_range[1])
-        self.z = np.random.uniform(z_range[0], z_range[1] * 2 / 3)
+        :param cfg: Experiment config object
+        """
+        self.x = np.random.uniform(cfg.x_range[0], cfg.x_range[1])
+        self.y = np.random.uniform(cfg.y_range[0], cfg.y_range[1])
+        self.z = np.random.uniform(cfg.z_range[0], cfg.z_range[1] * 2 / 3)
 
-        self.d_theta_range = d_theta_range
-        self.v = v
+        self.d_theta_range = cfg.d_theta_range
+        self.v = cfg.v
 
-        self.x_r = x_range
-        self.y_r = y_range
-        self.z_r = np.array(z_range) * 2 / 3
+        self.x_r = cfg.x_range
+        self.y_r = cfg.y_range
+        self.z_r = np.array(cfg.z_range) * 2 / 3
         self.phi = np.random.uniform(0, 2 * np.pi)
         self.theta = np.random.uniform(0, 2 * np.pi)
-        self.s = np.linspace(sensor_range[0], sensor_range[1], n_sensors)
-        self.a = a
+        self.s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.n_sensors)
+        self.a = cfg.a
 
         self.fluid_v = None
 
@@ -124,10 +118,10 @@ class Sphere(object):
         return oldx, oldy, oldz
 
     def step(self):
-        '''
+        """
         Update the angle (phi), x- and y-locations and obtain fluid velocity
         :return: new (x,y)-location and fluid velocity
-        '''
+        """
         self.phi += np.random.uniform(self.d_theta_range[0], self.d_theta_range[1])
         self.theta += np.random.uniform(self.d_theta_range[0], self.d_theta_range[1])
 

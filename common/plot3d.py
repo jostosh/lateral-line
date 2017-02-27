@@ -8,8 +8,7 @@ rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica'], 'size': 14})
 rc('text', usetex=True)
 
 
-def plot3d(N_sensors, ax, fluid_v0, fluid_v1, latline, s, sensor_range, target0, target1, x_mesh3d, xs, y_mesh3d, ys,
-           z_mesh3d, z_range, resolution, zs):
+def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d, latline, s, target0, target1):
     """
     Plots the data in 3D
     :param N_sensors:       The number of sensors per sensor array
@@ -33,21 +32,21 @@ def plot3d(N_sensors, ax, fluid_v0, fluid_v1, latline, s, sensor_range, target0,
     """
     x_slice = x_mesh3d[:, :, 0]
     # Compute the conversion of the mesh grid to the indices in the target matrices
-    column_indices = distanceToIdx(x_slice, sensor_range, N_sensors).astype(np.int64)
+    column_indices = distanceToIdx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
 
     # Compute the conversion of the mesh grid to the z-indices in the ta
-    row_indices0 = distanceToIdx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), z_range, resolution)
-    row_indices1 = distanceToIdx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), z_range, resolution)
+    row_indices0 = distanceToIdx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices1 = distanceToIdx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
     row_indices0_mod = np.mod(row_indices0, 1)
     row_indices1_mod = np.mod(row_indices1, 1)
     row_indices0 = row_indices0.astype(np.int64)
     row_indices1 = row_indices1.astype(np.int64)
 
     # Initialize the plot
-    init_plot(ax, sensor_range, z_range)
+    init_plot(ax, cfg.sensor_range, cfg.z_range)
 
     # Compute the width of the bars
-    width = (sensor_range[1] - sensor_range[0]) / N_sensors
+    width = (cfg.sensor_range[1] - cfg.sensor_range[0]) / cfg.N_sensors
 
     # Plot the excitation pattern
     plot_excitation(ax, fluid_v0, fluid_v1, s, width)
@@ -57,7 +56,7 @@ def plot3d(N_sensors, ax, fluid_v0, fluid_v1, latline, s, sensor_range, target0,
 
     # Plot the reconstruction of the spheres using the target matrices
     plot_reconstruction(ax, target0, target1, x_mesh3d, column_indices, row_indices0_mod, row_indices0,
-                        row_indices1_mod, row_indices1, y_mesh3d, z_mesh3d, resolution)
+                        row_indices1_mod, row_indices1, y_mesh3d, z_mesh3d, cfg.resolution)
 
     plot_velocity_arrows(ax, latline, xs, ys, zs)
 
