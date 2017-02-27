@@ -94,7 +94,7 @@ def generate_data(cfg, mode='train'):
             targets[i - cfg.tau][0] = np.transpose(target0.reshape((cfg.resolution, cfg.N_sensors)))
             targets[i - cfg.tau][1] = np.transpose(target1.reshape((cfg.resolution, cfg.N_sensors)))
 
-        if cfg.display:
+        if cfg.display and i < 100:
             # Plot the situation in 3D
             plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d, latline, s, target0, target1)
 
