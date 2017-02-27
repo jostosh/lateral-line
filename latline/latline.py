@@ -22,7 +22,7 @@ class Latline(object):
 
         if np.random.uniform(0, 1) > 0.95:
             if len(self.spheres) < self.max:
-                self.spheres.append(Sphere(cfg))
+                self.spheres.append(Sphere(self.cfg))
 
         for sphere in self.spheres:
             sphere.step()

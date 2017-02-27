@@ -18,7 +18,9 @@ data_config0 = {
     "display": False,
     "sigma": 0.2,
     "tau": 4,
-    "a": 0.5
+    "a": 0.5,
+    'min_spheres': 1,
+    'max_spheres': 5
 }
 
 experiment_config0 = {
@@ -55,6 +57,9 @@ def parse_config_args(mode='experiment'):
 
 
 class ExperimentConfig(object):
+    """
+    This object forces code completion in an IDE
+    """
     def __init__(self, args):
         if isinstance(args, dict):
             self.__dict__.update(**args)
@@ -70,6 +75,9 @@ class ExperimentConfig(object):
 
 
 class DataConfig(object):
+    """
+    This object forces code completion in IDE, which can be very convenient in Python
+    """
     def __init__(self, args):
         if isinstance(args, dict):
             self.__dict__.update(**args)
@@ -90,6 +98,8 @@ class DataConfig(object):
         self.sensor_range = args.sensor_range
         self.tau = args.tau
         self.a = args.a
+        self.min_spheres = args.min_spheres
+        self.max_spheres = args.max_spheres
 
 
 def init_log_dir(config, by_params=['merge_at']):

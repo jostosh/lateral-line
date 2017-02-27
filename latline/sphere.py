@@ -24,7 +24,7 @@ class Sphere(object):
         self.z_r = np.array(cfg.z_range) * 2 / 3
         self.phi = np.random.uniform(0, 2 * np.pi)
         self.theta = np.random.uniform(0, 2 * np.pi)
-        self.s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.n_sensors)
+        self.s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.N_sensors)
         self.a = cfg.a
 
         self.fluid_v = None
