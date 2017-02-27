@@ -82,8 +82,8 @@ def generate_data(cfg, mode='train'):
         target1 = np.max(target1, axis=0)
 
         # Save measurements and heatmap
-        buffer0.append(fluid_v0)
-        buffer1.append(fluid_v1)
+        buffer0.append(fluid_v0 * cfg.sensitivity)
+        buffer1.append(fluid_v1 * cfg.sensitivity)
 
         if i >= cfg.tau:
             buffer0.popleft()

@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from matplotlib import rc
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica'], 'size': 14})
 rc('text', usetex=True)
@@ -11,32 +12,28 @@ rc('text', usetex=True)
 def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d, latline, s, target0, target1):
     """
     Plots the data in 3D
-    :param N_sensors:       The number of sensors per sensor array
+    :param cfg:             DataConfig object defining configuration
     :param ax:              The Matplotlib axis object
     :param fluid_v0:        Fluid velocity along first sensor array
     :param fluid_v1:        Fluid velocity along second sensor array
+    :param xs:              The x-coordinates of all spheres
+    :param ys:              The y-coordinates af all spheres
+    :param zs:              The z-coordinates of all spheres
+    :param x_mesh3d:        3d mesh of x-values
+    :param y_mesh3d:        3d mesh of y-values
+    :param z_mesh3d:        3d mesh of z-values
     :param latline:         Lateral line instance
     :param s:               The domain for which to plot the excitation
-    :param sensor_range:    The range of the sensor units
     :param target0:         The first target matrix
     :param target1:         The second target matrix
-    :param x_mesh3d:        3d mesh of x-values
-    :param xs:              The x-coordinates of all spheres
-    :param y_mesh3d:        3d mesh of y-values
-    :param ys:              The y-coordinates af all spheres
-    :param z_mesh3d:        3d mesh of z-values
-    :param z_range:         The range of the z-values
-    :param resolution:      The resolution of the target matrix
-    :param zs:              The z-coordinates of all spheres
-    :return:
     """
     x_slice = x_mesh3d[:, :, 0]
     # Compute the conversion of the mesh grid to the indices in the target matrices
-    column_indices = distanceToIdx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
+    column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
 
     # Compute the conversion of the mesh grid to the z-indices in the ta
-    row_indices0 = distanceToIdx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
-    row_indices1 = distanceToIdx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices0 = distance_to_idx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices1 = distance_to_idx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
     row_indices0_mod = np.mod(row_indices0, 1)
     row_indices1_mod = np.mod(row_indices1, 1)
     row_indices0 = row_indices0.astype(np.int64)
@@ -180,10 +177,10 @@ def plot_excitation(ax, fluid_v0, fluid_v1, s, width):
     :param s:           The domain to use for excitation
     :param width:       The width of the bars
     """
-    ax.bar(s, fluid_v0 * 5, zs=-.5, zdir='y', color='b', width=width, alpha=0.5)
-    ax.bar(s, fluid_v1 * 5, zs=.5, zdir='y', color='r', width=width, alpha=0.5)
+    ax.bar(s, fluid_v0 * 5000, zs=-.5, zdir='y', color='b', width=width, alpha=0.5)
+    ax.bar(s, fluid_v1 * 5000, zs=.5, zdir='y', color='r', width=width, alpha=0.5)
 
 
-def distanceToIdx(d, range_d, maxi):
+def distance_to_idx(d, range_d, maxi):
     idx = np.asarray((d - range_d[0]) / (range_d[1] - range_d[0]) * maxi)
     return np.minimum(np.maximum(idx, 0), maxi-1)

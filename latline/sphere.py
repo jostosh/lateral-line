@@ -96,12 +96,12 @@ class Sphere(object):
         elif self.x - self.a < self.x_r[0]:
             oldx, self.x = mirror_min(oldx, self.x - self.a, self.x_r[0])
 
-        elif self.y + self.a > self.y_r[1]:
+        if self.y + self.a > self.y_r[1]:
             oldy, self.y = mirror_plus(oldz, self.y + self.a, self.y_r[1])
         elif self.y - self.a < self.y_r[0]:
             oldy, self.y = mirror_min(oldz, self.y - self.a, self.y_r[0])
 
-        elif self.z + self.a > self.z_r[1]:
+        if self.z + self.a > self.z_r[1]:
             oldz, self.z = mirror_plus(oldz, self.z + self.a, self.z_r[1])
         elif self.z - self.a < self.z_r[0]:
             oldz, self.z = mirror_min(oldz, self.z - self.a, self.z_r[0])

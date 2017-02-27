@@ -4,7 +4,7 @@ import os
 PROJECT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 
 data_config0 = {
-    "v": 0.5,
+    "v": 0.05,
     "x_range": [-1, 1],
     "y_range": [-1, 1],
     "z_range": [0, 1.5],
@@ -18,9 +18,10 @@ data_config0 = {
     "display": False,
     "sigma": 0.2,
     "tau": 4,
-    "a": 0.5,
+    "a": 0.05,
     'min_spheres': 1,
-    'max_spheres': 5
+    'max_spheres': 2,
+    'sensitivity': 1000
 }
 
 experiment_config0 = {
@@ -100,6 +101,7 @@ class DataConfig(object):
         self.a = args.a
         self.min_spheres = args.min_spheres
         self.max_spheres = args.max_spheres
+        self.sensitivity = args.sensitivity
 
 
 def init_log_dir(config, by_params=['merge_at']):
