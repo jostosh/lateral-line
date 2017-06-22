@@ -55,28 +55,36 @@ def conv1d(incoming, n_filters, filter_shape, activation='relu', name='Conv1D'):
     :param name:            The name of the layer.
     :return:                Returns the output tensor.
     """
+    if isinstance(filter_shape, int):
+        filter_shape = [filter_shape]
+
+    n_filters //= len(filter_shape)
     n_in = incoming.get_shape().as_list()[-1]
+
+    outputs = []
     with tf.variable_scope(name):
+        for i, f_s in enumerate(filter_shape):
+            initializer = tf.contrib.layers.xavier_initializer_conv2d()
+            weights = tf.get_variable("weights{}".format(i), initializer=initializer,
+                                      shape=[f_s, n_in, n_filters],
+                                      regularizer=tf.contrib.layers.l2_regularizer(1e-4))
+            bias = tf.get_variable("biases{}".format(i), initializer=tf.constant_initializer(), shape=[n_filters],
+                                   regularizer=tf.contrib.layers.l2_regularizer(1e-4))
+            f = get_activation(activation)
+            outputs.append(
+                f(tf.nn.bias_add(tf.nn.conv1d(incoming, weights, stride=1, padding='SAME'), bias), name=name + 'Out')
+            )
 
-        initializer = tf.contrib.layers.variance_scaling_initializer(factor=2.0) if activation == 'relu' \
-            else tf.contrib.layers.xavier_initializer_conv2d()
-        weights = tf.get_variable("weights", initializer=initializer,
-                                  shape=[filter_shape, n_in, n_filters],
-                                  regularizer=tf.contrib.layers.l2_regularizer(1e-4))
-        bias = tf.get_variable("biases", initializer=tf.constant_initializer(), shape=[n_filters],
-                               regularizer=tf.contrib.layers.l2_regularizer(1e-4))
+    out = tf.concat(outputs, axis=2)
 
-    f = get_activation(activation)
-    activation = f(tf.nn.bias_add(tf.nn.conv1d(incoming, weights, stride=1, padding='SAME'), bias), name=name + 'Out')
-
-    summary = tf.summary.histogram(name + 'Out', activation)
+    summary = tf.summary.histogram(name + 'Out', out)
     tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/train", summary)
     tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/test", summary)
 
-    return activation
+    return out
 
 
-def conv_chain(incoming, n_kernels, kernel_shapes, activations, count_from=0):
+def conv_chain(incoming, n_kernels, kernel_shapes, activations, count_from=0, dense=False):
     """
     Builds a chain of convolution operations by looping over the set over the list of kernel counts, shapes and
     activation functions
@@ -89,8 +97,11 @@ def conv_chain(incoming, n_kernels, kernel_shapes, activations, count_from=0):
     :return:                The final Tensor in the chain
     """
     chain = incoming
+    prev_layers = []
     for i, (n_k, kernel_shape, activation) in enumerate(zip(n_kernels, kernel_shapes, activations)):
-        chain = conv1d(chain, n_k, kernel_shape, activation=activation, name='Conv{}'.format(i + count_from))
+        chain_input = chain if not dense else tf.concat(prev_layers, axis=2)
+        chain = conv1d(chain_input, n_k, kernel_shape, activation=activation, name='Conv{}'.format(i + count_from))
+        prev_layers.append(chain)
     return chain
 
 
@@ -112,3 +123,10 @@ def fully_connected_chain(incoming, n_units, activations, count_from=0):
     return chain
 
 
+def binary_cross_entropy_loss(prediction, targets):
+    return -tf.reduce_mean(
+        tf.reduce_sum(
+            targets * tf.log(prediction + 1e-20) + (1 - targets) * tf.log(1 - prediction + 1e-20),
+            axis=[1, 2]
+        )
+    )

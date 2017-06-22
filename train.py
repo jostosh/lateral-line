@@ -7,7 +7,18 @@ from tqdm import trange
 
 from common.data_util import DataBatcher
 from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
-from latline.layers import conv_chain, fully_connected_chain
+from latline.models import define_train_step, define_loss, define_cross_network, define_parallel_network, define_inputs
+
+
+def noise_layer(incoming, std):
+    """
+    Adds noise to input
+    :param incoming: Input tensor
+    :param std:      Standard deviation
+    :return:         Tensor with added Gaussian noise
+    """
+    noise = tf.random_normal(shape=tf.shape(incoming), mean=0.0, stddev=std, dtype=tf.float32)
+    return incoming + noise
 
 
 def train(config):
@@ -42,15 +53,25 @@ def train(config):
     # Now we can set up the network. First we define the input placeholders
     excitation0, excitation1 = define_inputs((None,) + train_x.shape[-2:])
 
+    data_std_dev = np.std(np.concatenate((test_x, train_x)))
+
+    # Optionally use inputs with different ranges
+    excitation0_preprocessed, excitation1_preprocessed = \
+        noise_layer(data_std_dev * config.noise, excitation0), noise_layer(data_std_dev * config.noise, excitation1)
+    if config.multi_range:
+        excitation0_preprocessed, excitation1_preprocessed = define_multi_range_input(
+            config.multi_range_trainable, config.input_factors, excitation0, excitation1
+        )
+
     # Then, we define the network giving us the output
     out = {
         'parallel': define_parallel_network,
         'cross': define_cross_network
-    }[config.model](config, excitation0, excitation1)
+    }[config.model](config, excitation0_preprocessed, excitation1_preprocessed)
 
     # Next, we define, the loss that depends on the error + some L2 regularization of the weights
     # For reporting performance, the MSE is used
-    loss, mse, target = define_loss(out, train_y)
+    loss, mse, target = define_loss(out, train_y, config.loss)
 
     # We define the train step which is the Op that should be called when training.
     train_step, global_step = define_train_step(loss, config.lr)
@@ -93,6 +114,18 @@ def train(config):
             feed_dict={excitation0: test_x[:, 0, :, :], excitation1: test_x[:, 1, :, :], target: test_y}
         )
         test_writer.add_summary(summ, global_step=step)
+        print("Test MSE: {}".format(mean_square_error))
+
+
+def define_multi_range_input(trainable, input_factors, excitation0, excitation1):
+    if trainable:
+        input_factors = [tf.Variable(input_fac) for input_fac in input_factors]
+        [tf.summary.scalar('InputFactor{}'.format(i), input_fac) for i, input_fac in enumerate(input_factors)]
+
+    print(excitation0.get_shape().as_list())
+    excitation0 = tf.concat([excitation0 * input_fac for input_fac in input_factors], axis=2)
+    excitation1 = tf.concat([excitation1 * input_fac for input_fac in input_factors], axis=2)
+    return excitation0, excitation1
 
 
 def read_data(config):
@@ -102,141 +135,6 @@ def read_data(config):
     with open(config.data, 'rb') as f:
         train_x, train_y, test_x, test_y = pickle.load(f)
     return test_x, test_y, train_x, train_y
-
-
-def define_train_step(loss, lr):
-    """
-    Define the train step
-    """
-    with tf.name_scope("TrainStep"):
-        global_step = tf.Variable(0, name='global_step', trainable=False)
-        train_step = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
-    return train_step, global_step
-
-
-def define_loss(out, train_y):
-    """
-    Defines the loss plus performance statistics and returns target placeholder
-    :param out:
-    :param train_y:
-    :return:
-    """
-    with tf.name_scope("Target"):
-        shape = train_y.shape
-        target = tf.placeholder(tf.float32, (None,) + shape[1:], name="Target")
-        target_t = tf.transpose(target, [0, 2, 3, 1])
-        target_merged = tf.reshape(target_t, (-1, shape[2], shape[1] * shape[3]))
-
-        print(target_merged.get_shape().as_list())
-    with tf.name_scope("Loss"):
-        # Obtain the regularization losses
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-
-        # The total loss is defined as the L2 loss of the targets together with the L2 losses
-        if config.loss == 'cross_entropy':
-            loss = binary_cross_entropy_loss(targets=target_merged, prediction=out)
-        elif config.loss == 'l2':
-            loss = tf.nn.l2_loss(target_merged - out)
-        else:
-            raise ValueError("Unknown loss function")
-
-        loss += tf.add_n(reg_losses)
-
-        # For reporting performance, we use the mean squared error
-        mse = tf.reduce_mean(tf.square(target_merged - out))
-
-        # Add some scalar summaries
-        loss_summary = tf.summary.scalar("Loss", loss)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/train', loss_summary)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/test', loss_summary)
-
-        mse_summary = tf.summary.scalar("MeanSquaredError", mse)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/train', mse_summary)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/test', mse_summary)
-
-    return loss, mse, target
-
-
-def define_shared_stream(excitation0, excitation1, n_kernels, kernel_shapes, activations, name="SharedStream"):
-    with tf.variable_scope(name) as scope:
-        # Build the first chain
-        chain0 = conv_chain(excitation0, n_kernels, kernel_shapes, activations)
-        # Reuse the variables of this chain
-        scope.reuse_variables()
-        # And define the second chain
-        chain1 = conv_chain(excitation1, n_kernels, kernel_shapes, activations)
-
-    return chain0, chain1
-
-
-def define_cross_network(config, excitation0, excitation1):
-    """"""
-    chain0, chain1 = define_shared_stream(
-        excitation0, excitation1, n_kernels=config.n_kernels[:config.merge_at],
-        kernel_shapes=config.kernel_shapes[:config.merge_at], activations=config.activations[:config.merge_at]
-    )
-    with tf.name_scope("MergedStream"):
-        convs_concat = tf.concat([chain0, chain1], 2, name='ConvsConcat')
-    with tf.name_scope("Tail"):
-        out = fully_connected_chain(convs_concat, n_units=config.n_units, activations=config.fc_activations,
-                                    count_from=config.merge_at)
-        out = tf.reshape(out, [-1, config.n_sensors, config.n_kernels[-1]])
-
-    return out
-
-
-def define_parallel_network(config, excitation0, excitation1):
-    """
-    Builds the body of the network
-    :param config: An ExperimentConfig instance.
-    :param excitation0: First excitation placeholder
-    :param excitation1: Second excitation placeholder
-    :param n_kernels:   Number of kernels
-    :return:
-    """
-
-    chain0, chain1 = define_shared_stream(
-        excitation0, excitation1, n_kernels=config.n_kernels[:config.merge_at],
-        kernel_shapes=config.kernel_shapes[:config.merge_at],activations=config.activations[:config.merge_at]
-    )
-
-    #if config.model == Models.PARALLEL:
-    with tf.name_scope("MergedStream"):
-        # Now we merge these to define the input for the last few layers
-        convs_concat = tf.concat([chain0, chain1], 2, name='ConvsConcat')
-    with tf.variable_scope("Tail"):
-        # Finally, we define the output of the network using the layer parameters for those after the merge
-        out = conv_chain(convs_concat, config.n_kernels[config.merge_at:], config.kernel_shapes[config.merge_at:],
-                         config.activations[config.merge_at:], count_from=config.merge_at)
-    """
-    elif config.model == Models.CROSSED:
-
-        pass
-    elif config.model == Models.PERPENDICULAR:
-    """
-
-    return out
-
-
-def binary_cross_entropy_loss(prediction, targets):
-    return -tf.reduce_mean(
-        tf.reduce_sum(
-            targets * tf.log(prediction + 1e-20) + (1 - targets) * tf.log(1 - prediction + 1e-20),
-            axis=[1, 2]
-        )
-    )
-
-
-def define_inputs(shape):
-    """
-    Define the inputs
-    :param train_x: The numeric train input that is used
-    :return: Two placeholders for both sensor arrays
-    """
-    with tf.name_scope("Inputs"):
-        excitation0 = tf.placeholder(tf.float32, shape=shape, name="Excitation0")
-        excitation1 = tf.placeholder(tf.float32, shape=shape, name="Excitation1")
-    return excitation0, excitation1
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ experiment_config0 = {
     "n_kernels": [32, 64, 64, 64],
     "n_units": [1024],
     "batch_size": 125,
-    "filter_shapes": [5, 5, 5, 5, 5],
+    "filter_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
     "half_time": 1000,
     "data": os.path.join(PROJECT_FOLDER, 'data', 'multisphere_parallel.pickle'),
     "activations": DEFAULT_ACTIVATIONS,
@@ -41,7 +41,12 @@ experiment_config0 = {
     "loss": "cross_entropy",
     "lr": 1e-3,
     'n_sensors': 32,
-    'fc_activations': ['relu', 'sigmoid']
+    'fc_activations': ['relu', 'sigmoid'],
+    'dense': False,
+    'multi_range': False,
+    'multi_range_trainable': False,
+    'input_factors': [0.1, 1.0, 100.0],
+    'noise': 0.01
 }
 
 
@@ -87,6 +92,12 @@ class ExperimentConfig(object):
         self.n_sensors = args.n_sensors
         self.n_units = args.n_units
         self.fc_activations = args.fc_activations
+        self.dense = args.dense
+        self.multi_range = args.multi_range
+        self.multi_range_trainable = args.multi_range_trainable
+        self.input_factors = args.input_factors
+        self.noise = args.noise
+
 
 
 class DataConfig(object):
@@ -119,7 +130,7 @@ class DataConfig(object):
 
 
 
-def init_log_dir(config, by_params=['merge_at', 'loss']):
+def init_log_dir(config, by_params=['merge_at', 'model']):
     """
     Automatically creates a logging dir for TensorBoard logging
     :param config:      ExperimentConfig object
