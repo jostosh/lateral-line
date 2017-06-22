@@ -13,7 +13,7 @@ sweeps = {
     4: dict(model='parallel', logdir_base_suffix='parallel_multi_range', multi_range=True),
     5: dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
     6: dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
-    7: dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_dense'),
+    7: dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_dense', dense=True),
     8: dict(model='parallel', merge_at=3),
     9: dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
     10: dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
