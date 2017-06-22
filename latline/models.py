@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 from latline.layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain
 
@@ -108,7 +109,9 @@ def define_parallel_network(config, excitation0, excitation1):
         convs_concat = tf.concat([chain0, chain1], 2, name='ConvsConcat')
     with tf.variable_scope("Tail"):
         # Finally, we define the output of the network using the layer parameters for those after the merge
-        out = conv_chain(convs_concat, config.n_kernels[config.merge_at:], config.kernel_shapes[config.merge_at:],
+        n_kernels = np.asarray(config.n_kernels[config.merge_at:])
+        n_kernels[:-1] *= 2
+        out = conv_chain(convs_concat, n_kernels, config.kernel_shapes[config.merge_at:],
                          config.activations[config.merge_at:], count_from=config.merge_at)
 
     return out

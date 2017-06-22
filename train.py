@@ -7,18 +7,8 @@ from tqdm import trange
 
 from common.data_util import DataBatcher
 from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
+from latline.layers import define_multi_range_input, noise_layer
 from latline.models import define_train_step, define_loss, define_cross_network, define_parallel_network, define_inputs
-
-
-def noise_layer(incoming, std):
-    """
-    Adds noise to input
-    :param incoming: Input tensor
-    :param std:      Standard deviation
-    :return:         Tensor with added Gaussian noise
-    """
-    noise = tf.random_normal(shape=tf.shape(incoming), mean=0.0, stddev=std, dtype=tf.float32)
-    return incoming + noise
 
 
 def train(config):
@@ -30,7 +20,6 @@ def train(config):
     """
 
     sensor_index = 1
-    spatial_index = 2
     slice_index = 3
 
     # Create TensorFlow session
@@ -48,7 +37,7 @@ def train(config):
     # This should be added to our list of n_kernels
     config.n_kernels.append(output_depth)
     # Also add this to list containing the number of neurons in fully connected layers
-    config.n_units.append(np.prod(train_y.shape[1:]))
+    config.n_units.append(np.prod(train_y.shape[sensor_index:]))
 
     # Now we can set up the network. First we define the input placeholders
     excitation0, excitation1 = define_inputs((None,) + train_x.shape[-2:])
@@ -117,17 +106,6 @@ def train(config):
         print("Test MSE: {}".format(mean_square_error))
 
 
-def define_multi_range_input(trainable, input_factors, excitation0, excitation1):
-    if trainable:
-        input_factors = [tf.Variable(input_fac) for input_fac in input_factors]
-        [tf.summary.scalar('InputFactor{}'.format(i), input_fac) for i, input_fac in enumerate(input_factors)]
-
-    print(excitation0.get_shape().as_list())
-    excitation0 = tf.concat([excitation0 * input_fac for input_fac in input_factors], axis=2)
-    excitation1 = tf.concat([excitation1 * input_fac for input_fac in input_factors], axis=2)
-    return excitation0, excitation1
-
-
 def read_data(config):
     """
     Reads in the data
@@ -139,7 +117,4 @@ def read_data(config):
 
 if __name__ == "__main__":
     config = ExperimentConfig(parse_config_args())
-
-    project_folder = os.path.dirname(os.path.realpath(__file__))
-
     train(config)

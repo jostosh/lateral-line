@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 import os
+import pprint
 
 PROJECT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 DEFAULT_ACTIVATIONS = ['tanh', 'relu', 'relu', 'relu', 'sigmoid']
@@ -28,14 +29,14 @@ data_config0 = {
 experiment_config0 = {
     "n_kernels": [32, 64, 64, 64],
     "n_units": [1024],
-    "batch_size": 125,
+    "batch_size": 64,
     "filter_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
     "half_time": 1000,
     "data": os.path.join(PROJECT_FOLDER, 'data', 'multisphere_parallel.pickle'),
     "activations": DEFAULT_ACTIVATIONS,
     "logdir": os.path.join(PROJECT_FOLDER, "tensorboardlogs"),
-    "n_epochs": 1000,
-    "merge_at": 4,
+    "n_epochs": 250,
+    "merge_at": 3,
     "model": "parallel",
     "output_layer": len(DEFAULT_ACTIVATIONS) - 1,
     "loss": "cross_entropy",
@@ -46,7 +47,8 @@ experiment_config0 = {
     'multi_range': False,
     'multi_range_trainable': False,
     'input_factors': [0.1, 1.0, 100.0],
-    'noise': 0.01
+    'noise': 0.01,
+    'logdir_base_suffix': ''
 }
 
 
@@ -74,9 +76,13 @@ class ExperimentConfig(object):
     """
     This object forces code completion in an IDE
     """
-    def __init__(self, args):
+    def __init__(self, args=None):
+        if args is None:
+            self.__dict__.update(**experiment_config0)
+            return
         if isinstance(args, dict):
             self.__dict__.update(**args)
+            return
         self.n_kernels = args.n_kernels
         self.batch_size = args.batch_size
         self.kernel_shapes = args.filter_shapes
@@ -97,6 +103,7 @@ class ExperimentConfig(object):
         self.multi_range_trainable = args.multi_range_trainable
         self.input_factors = args.input_factors
         self.noise = args.noise
+        self.logdir_base_suffix = args.logdir_base_suffix
 
 
 
@@ -129,15 +136,14 @@ class DataConfig(object):
         self.sensitivity = args.sensitivity
 
 
-
-def init_log_dir(config, by_params=['merge_at', 'model']):
+def init_log_dir(config, by_params=[]):
     """
     Automatically creates a logging dir for TensorBoard logging
     :param config:      ExperimentConfig object
     :param by_params:   List of params to use in the generation of the particular TensorBoard logging directory
     :return:            The newly created logging dir
     """
-    base = config.logdir
+    base = os.path.join(config.logdir, config.logdir_base_suffix)
     if by_params:
         base = os.path.join(base, *['{}={}'.format(p, config.__dict__[p]) for p in by_params])
 
@@ -146,5 +152,8 @@ def init_log_dir(config, by_params=['merge_at', 'model']):
 
     logdir = os.path.join(base, 'run%04d' % (int(sorted(dirs)[-1][-4:]) + 1,) if dirs else 'run0000')
     os.makedirs(logdir)
+
+    with open(os.path.join(logdir, 'config.txt'), 'w') as f:
+        pprint.pprint(config.__dict__, stream=f)
 
     return logdir
