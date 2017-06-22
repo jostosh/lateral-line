@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 import os
 
 PROJECT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
+DEFAULT_ACTIVATIONS = ['tanh', 'relu', 'relu', 'relu', 'sigmoid']
 
 data_config0 = {
     "v": 0.05,
@@ -26,14 +27,21 @@ data_config0 = {
 
 experiment_config0 = {
     "n_kernels": [32, 64, 64, 64],
+    "n_units": [1024],
     "batch_size": 125,
     "filter_shapes": [5, 5, 5, 5, 5],
     "half_time": 1000,
     "data": os.path.join(PROJECT_FOLDER, 'data', 'multisphere_parallel.pickle'),
-    "activations": ['tanh', 'relu', 'relu', 'relu', 'sigmoid'],
+    "activations": DEFAULT_ACTIVATIONS,
     "logdir": os.path.join(PROJECT_FOLDER, "tensorboardlogs"),
     "n_epochs": 1000,
-    "merge_at": 4
+    "merge_at": 4,
+    "model": "parallel",
+    "output_layer": len(DEFAULT_ACTIVATIONS) - 1,
+    "loss": "cross_entropy",
+    "lr": 1e-3,
+    'n_sensors': 32,
+    'fc_activations': ['relu', 'sigmoid']
 }
 
 
@@ -73,6 +81,12 @@ class ExperimentConfig(object):
         self.logdir = args.logdir
         self.n_epochs = args.n_epochs
         self.merge_at = args.merge_at
+        self.model = args.model
+        self.loss = args.loss
+        self.lr = args.lr
+        self.n_sensors = args.n_sensors
+        self.n_units = args.n_units
+        self.fc_activations = args.fc_activations
 
 
 class DataConfig(object):
@@ -104,7 +118,8 @@ class DataConfig(object):
         self.sensitivity = args.sensitivity
 
 
-def init_log_dir(config, by_params=['merge_at']):
+
+def init_log_dir(config, by_params=['merge_at', 'loss']):
     """
     Automatically creates a logging dir for TensorBoard logging
     :param config:      ExperimentConfig object
