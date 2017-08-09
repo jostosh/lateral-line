@@ -7,7 +7,7 @@
 #SBATCH --mail-type ALL
 #SBATCH --mail-user jos.vandewolfshaar@gmail.com
 #SBATCH --output LLSWEEP-%j.log
-#SBATCH --mem=2000
+#SBATCH --mem=4000
 #SBATCH --partition=short
 
 module load tensorflow
