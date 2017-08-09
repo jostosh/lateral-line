@@ -63,7 +63,7 @@ def train(config):
     loss, mse, target = define_loss(out, train_y, config.loss)
 
     # We define the train step which is the Op that should be called when training.
-    train_step, global_step = define_train_step(loss, config.lr)
+    train_step, global_step = define_train_step(loss, config.lr, config.optimizer)
 
     # Initialize writer for TensorBoard logging
     logdir = init_log_dir(config)

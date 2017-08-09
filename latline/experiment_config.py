@@ -30,13 +30,13 @@ experiment_config0 = {
     "n_kernels": [32, 64, 64, 64],
     "n_units": [1024],
     "batch_size": 64,
-    "filter_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
+    "kernel_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
     "half_time": 1000,
     "data": os.path.join(PROJECT_FOLDER, 'data', 'multisphere_parallel.pickle'),
     "activations": DEFAULT_ACTIVATIONS,
     "logdir": os.path.join(PROJECT_FOLDER, "tensorboardlogs"),
     "n_epochs": 250,
-    "merge_at": 3,
+    "merge_at": 4,
     "model": "parallel",
     "output_layer": len(DEFAULT_ACTIVATIONS) - 1,
     "loss": "cross_entropy",
@@ -48,7 +48,8 @@ experiment_config0 = {
     'multi_range_trainable': False,
     'input_factors': [0.1, 1.0, 100.0],
     'noise': 0.01,
-    'logdir_base_suffix': ''
+    'logdir_base_suffix': 'test',
+    'optimizer': 'adam'
 }
 
 
@@ -85,7 +86,7 @@ class ExperimentConfig(object):
             return
         self.n_kernels = args.n_kernels
         self.batch_size = args.batch_size
-        self.kernel_shapes = args.filter_shapes
+        self.kernel_shapes = args.kernel_shapes
         self.half_time = args.half_time
         self.data = args.data
         self.activations = args.activations
@@ -104,7 +105,7 @@ class ExperimentConfig(object):
         self.input_factors = args.input_factors
         self.noise = args.noise
         self.logdir_base_suffix = args.logdir_base_suffix
-
+        self.optimizer = args.optimizer
 
 
 class DataConfig(object):

@@ -17,8 +17,12 @@ sweeps = {
     8: dict(model='parallel', merge_at=3),
     9: dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
     10: dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
-    11: dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
-    12: dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n02')
+    11: dict(model='parallel', noise=0.001, logdir_base_suffix='parallel_n0001'),
+    12: dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
+    13: dict(model='parallel', noise=0.2, logdir_base_suffix='parallel_n02'),
+    14: dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow1', lr=1e-3),
+    15: dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow2', lr=5e-3),
+    16: dict(model='parallel', optimizer='adam', logdir_base_suffix='yellow2', lr=5e-3)
 }
 
 if __name__ == "__main__":

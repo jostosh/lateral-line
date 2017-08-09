@@ -2,15 +2,21 @@ import tensorflow as tf
 import numpy as np
 
 from latline.layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain
+from yellowfin.tuner_utils.yellowfin import YFOptimizer
 
 
-def define_train_step(loss, lr):
+def define_train_step(loss, lr, optimizer):
     """
     Define the train step
     """
     with tf.name_scope("TrainStep"):
         global_step = tf.Variable(0, name='global_step', trainable=False)
-        train_step = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
+        if optimizer == 'yellow':
+            train_step = YFOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
+        elif optimizer == 'adam':
+            train_step = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
+        else:
+            raise ValueError("{} not a valid optimizer, choose between 'adam' or 'yellow'".format(optimizer))
     return train_step, global_step
 
 
