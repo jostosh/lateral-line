@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --time=00:30:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=24
@@ -8,7 +8,8 @@
 #SBATCH --mail-user jos.vandewolfshaar@gmail.com
 #SBATCH --output LLSWEEP-%j.log
 #SBATCH --mem=4000
-#SBATCH --partition=short
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
 
 module load tensorflow
 source $HOME/envs/ll/bin/activate
