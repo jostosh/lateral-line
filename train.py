@@ -67,6 +67,7 @@ def train(config):
 
     # Initialize writer for TensorBoard logging
     logdir = init_log_dir(config)
+    print("Saving results to {}".format(logdir))
     train_writer    = tf.summary.FileWriter(os.path.join(logdir, 'train'), sess.graph)
     test_writer     = tf.summary.FileWriter(os.path.join(logdir, 'test'), sess.graph)
     train_summary   = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES + '/train'))
@@ -78,33 +79,33 @@ def train(config):
     # Initialize the graph variables
     sess.run(tf.global_variables_initializer())
 
-    # Now we start training!
-    for epoch in range(config.n_epochs):
-        t = trange(n_batches)
-        t.set_description("Training")
-        for batch_index in t:
-            batch_x, batch_y = data_batcher_train.next_batch()
-            fdict = {excitation0: batch_x[:, 0, :, :], excitation1: batch_x[:, 1, :, :], target: batch_y}
-            if batch_index % 10 == 0:
-                mean_square_error, l, _, summ, step = sess.run(
-                    [mse, loss, train_step, train_summary, global_step],
-                    feed_dict=fdict)
-                train_writer.add_summary(summ, global_step=step)
-            else:
-                mean_square_error, l, _ = sess.run(
-                    [mse, loss, train_step],
-                    feed_dict=fdict)
-            t.set_postfix(MSE=mean_square_error, loss=l, epoch='{}/{}'.format(epoch, config.n_epochs))
+    with open(os.path.join(logdir, 'results.csv'), 'w') as f:
+        f.write('epoch,mse,loss\n')
+        # Now we start training!
+        for epoch in range(config.n_epochs):
+            for batch_index in range(n_batches):
+                batch_x, batch_y = data_batcher_train.next_batch()
+                fdict = {excitation0: batch_x[:, 0, :, :], excitation1: batch_x[:, 1, :, :], target: batch_y}
+                if batch_index % 10 == 0:
+                    mean_square_error, l, _, summ, step = sess.run(
+                        [mse, loss, train_step, train_summary, global_step],
+                        feed_dict=fdict)
+                    train_writer.add_summary(summ, global_step=step)
+                else:
+                    mean_square_error, l, _ = sess.run(
+                        [mse, loss, train_step],
+                        feed_dict=fdict)
 
-        test_x, test_y = data_batcher_test.next_batch()
+            test_x, test_y = data_batcher_test.next_batch()
 
-        mean_square_error, summ, step = sess.run(
-            [mse, test_summary, global_step],
-            feed_dict={excitation0: test_x[:, 0, :, :], excitation1: test_x[:, 1, :, :], target: test_y}
-        )
-        test_writer.add_summary(summ, global_step=step)
-        print("Test MSE: {}".format(mean_square_error))
-
+            mean_square_error, summ, step, loss_num = sess.run(
+                [mse, test_summary, global_step, loss],
+                feed_dict={excitation0: test_x[:, 0, :, :], excitation1: test_x[:, 1, :, :], target: test_y}
+            )
+            test_writer.add_summary(summ, global_step=step)
+            print("Epoch ({}/{}), Test MSE: {}".format(epoch, config.n_epochs, mean_square_error))
+            f.write(str(epoch) + ',' + str(mean_square_error) + ',' + str(loss_num) + '\n')
+            f.flush()
 
 def read_data(config):
     """
