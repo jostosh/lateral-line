@@ -15,4 +15,4 @@ module load tensorflow
 source $HOME/envs/ll/bin/activate
 cd $HOME/lateral-line
 
-srun python3 ./train.py
+srun python3 ./sweep.py
