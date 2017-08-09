@@ -9,7 +9,7 @@
 #SBATCH --output LLSWEEP-%j.log
 #SBATCH --mem=4000
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:k40:1
 
 module load tensorflow
 source $HOME/envs/ll/bin/activate
