@@ -3,26 +3,27 @@ from train import train
 import pprint
 import tensorflow as tf
 from argparse import ArgumentParser
+import subprocess
 
 
-sweeps = {
-    0: dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_default'),
-    1: dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_m3'),
-    2: dict(model='parallel', merge_at=2, logdir_base_suffix='parallel_m2'),
-    3: dict(model='cross', logdir_base_suffix='cross_default'),
-    4: dict(model='parallel', logdir_base_suffix='parallel_multi_range', multi_range=True),
-    5: dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
-    7: dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_dense', dense=True),
-    8: dict(model='parallel', merge_at=4, logdir_base_suffix='l2', loss='l2'),
-    9: dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
-    10: dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
-    11: dict(model='parallel', noise=0.001, logdir_base_suffix='parallel_n0001'),
-    12: dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
-    13: dict(model='parallel', noise=0.2, logdir_base_suffix='parallel_n02'),
-    14: dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow1', lr=1e-3),
-    15: dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow2', lr=5e-3),
-    16: dict(model='parallel', optimizer='adam', logdir_base_suffix='yellow2', lr=5e-3)
-}
+sweeps = [
+    dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_default'),
+    dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_m3'),
+    dict(model='parallel', merge_at=2, logdir_base_suffix='parallel_m2'),
+    dict(model='cross', logdir_base_suffix='cross_default'),
+    dict(model='parallel', logdir_base_suffix='parallel_multi_range', multi_range=True),
+    dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
+    dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_dense', dense=True),
+    dict(model='parallel', merge_at=4, logdir_base_suffix='l2', loss='l2'),
+    dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
+    dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
+    dict(model='parallel', noise=0.001, logdir_base_suffix='parallel_n0001'),
+    dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
+    dict(model='parallel', noise=0.2, logdir_base_suffix='parallel_n02'),
+    dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow1', lr=1e-3),
+    dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow2', lr=5e-3),
+    dict(model='parallel', optimizer='adam', logdir_base_suffix='yellow2', lr=5e-3)
+]
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -36,7 +37,10 @@ if __name__ == "__main__":
 
     for i in sweep_indices:
         config.__dict__.update(sweeps[i])
-        print("Starting new parameter sweep")
-        pprint.pprint(config.__dict__)
-        tf.reset_default_graph()
-        train(config)
+        command = ['python', './train.py'] + ['--{}={}'.format(k, v) for k, v in sweeps[i].items()]
+        print("Initiating ", ' '.join(command))
+        try:
+            subprocess.run(command)
+        except:
+            subprocess.call(command)
+        
