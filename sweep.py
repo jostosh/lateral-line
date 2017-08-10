@@ -1,7 +1,4 @@
-from latline.experiment_config import ExperimentConfig, parse_config_args
-from train import train
-import pprint
-import tensorflow as tf
+from latline.experiment_config import ExperimentConfig
 from argparse import ArgumentParser
 import subprocess
 
@@ -43,4 +40,3 @@ if __name__ == "__main__":
             subprocess.run(command)
         except:
             subprocess.call(command)
-        
