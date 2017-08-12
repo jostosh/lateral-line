@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --time=05:00:00
+#SBATCH --time=03:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=24
@@ -13,5 +13,5 @@ module load tensorflow
 source $HOME/envs/ll/bin/activate
 cd $HOME/lateral-line
 
-python3 ./generate_data.py $1
-srun python3 ./sweep.py $1
+python3 ./generate_data.py $*
+srun python3 ./sweep.py $*
