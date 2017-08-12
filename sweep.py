@@ -27,6 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--until", type=int, default=len(sweeps))
     parser.add_argument("--subset", type=int, default=[], nargs='+')
+    parser.add_argument("--fnm", type=str, default='multisphere')
     args = parser.parse_args()
     config = ExperimentConfig()
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
 
     for i in sweep_indices:
         config.__dict__.update(sweeps[i])
-        command = ['python', './train.py'] + ['--{}={}'.format(k, v) for k, v in sweeps[i].items()]
+        command = ['python', './train.py', '--fnm={}'.format(args.fnm)] + ['--{}={}'.format(k, v) for k, v in sweeps[i].items()]
         print("Initiating ", ' '.join(command))
         try:
             subprocess.run(command)

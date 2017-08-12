@@ -9,6 +9,7 @@ from tqdm import trange
 from common.plot3d import plot3d
 from latline.experiment_config import DataConfig, parse_config_args
 from latline.latline import Latline
+import argparse
 
 
 def generate_data(cfg, mode='train'):
@@ -114,5 +115,5 @@ if __name__ == "__main__":
 
     # Serialize the data
     os.makedirs(os.path.join(project_folder, 'data'), exist_ok=True)
-    with open(os.path.join(project_folder, 'data', 'multisphere_parallel.pickle'), 'wb') as f:
+    with open(os.path.join(project_folder, 'data', '{}.pickle'.format(config.fnm)), 'wb') as f:
         pickle.dump([train_data, train_labels, test_data, test_labels], f)

@@ -3,7 +3,6 @@ import pickle
 
 import numpy as np
 import tensorflow as tf
-from tqdm import trange
 
 from common.data_util import DataBatcher
 from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
@@ -111,7 +110,9 @@ def read_data(config):
     """
     Reads in the data
     """
-    with open(config.data, 'rb') as f:
+    path = os.path.join(config.data, "{}.pickle".format(config.fnm))
+    print("Reading data at {}".format(path))
+    with open(path, 'rb') as f:
         train_x, train_y, test_x, test_y = pickle.load(f)
     return test_x, test_y, train_x, train_y
 

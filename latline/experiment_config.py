@@ -23,7 +23,8 @@ data_config0 = {
     "a": 0.05,
     'min_spheres': 1,
     'max_spheres': 2,
-    'sensitivity': 1000
+    'sensitivity': 1000,
+    'fnm': 'multisphere'
 }
 
 experiment_config0 = {
@@ -32,7 +33,7 @@ experiment_config0 = {
     "batch_size": 64,
     "kernel_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
     "half_time": 1000,
-    "data": os.path.join(PROJECT_FOLDER, 'data', 'multisphere_parallel.pickle'),
+    "data": os.path.join(PROJECT_FOLDER, 'data'),
     "activations": DEFAULT_ACTIVATIONS,
     "logdir": os.path.join(PROJECT_FOLDER, "tensorboardlogs"),
     "n_epochs": 250,
@@ -49,7 +50,8 @@ experiment_config0 = {
     'input_factors': [0.1, 1.0, 100.0],
     'noise': 0.01,
     'logdir_base_suffix': 'test',
-    'optimizer': 'adam'
+    'optimizer': 'adam',
+    'fnm': 'multisphere'
 }
 
 
@@ -106,6 +108,7 @@ class ExperimentConfig(object):
         self.noise = args.noise
         self.logdir_base_suffix = args.logdir_base_suffix
         self.optimizer = args.optimizer
+        self.fnm = args.fnm
 
 
 class DataConfig(object):
@@ -135,6 +138,7 @@ class DataConfig(object):
         self.min_spheres = args.min_spheres
         self.max_spheres = args.max_spheres
         self.sensitivity = args.sensitivity
+        self.fnm = args.fnm
 
 
 def init_log_dir(config, by_params=[]):
