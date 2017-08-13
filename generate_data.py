@@ -108,12 +108,18 @@ if __name__ == "__main__":
     """
     config = DataConfig(parse_config_args(mode='data'))
 
+    project_folder = os.path.dirname(os.path.realpath(__file__))
+    fnm = os.path.join(project_folder, 'data', '{}.pickle'.format(config.fnm))
+    if os.path.exists(fnm):
+        print("Already exists")
+        exit(0)
+
     # Obtain data for train, test and validation sets
     train_data, train_labels = generate_data(config, mode='train')
     test_data, test_labels = generate_data(config, mode='test')
-    project_folder = os.path.dirname(os.path.realpath(__file__))
 
     # Serialize the data
     os.makedirs(os.path.join(project_folder, 'data'), exist_ok=True)
+
     with open(os.path.join(project_folder, 'data', '{}.pickle'.format(config.fnm)), 'wb') as f:
         pickle.dump([train_data, train_labels, test_data, test_labels], f)
