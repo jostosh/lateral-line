@@ -1,8 +1,10 @@
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from latline.layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain
+from latline.common.tf_utils import add_summary
 from yellowfin.tuner_utils.yellowfin import YFOptimizer
+from .layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain, noise_layer, \
+    define_multi_range_input
 
 
 def define_train_step(loss, lr, optimizer):
@@ -30,8 +32,8 @@ def define_loss(out, train_y, loss_fn):
     with tf.name_scope("Target"):
         shape = train_y.shape
         target = tf.placeholder(tf.float32, (None,) + shape[1:], name="Target")
-        target_t = tf.transpose(target, [0, 2, 3, 1])
-        target_merged = tf.reshape(target_t, (-1, shape[2], shape[1] * shape[3]))
+        target_t = tf.transpose(target, [0, 1, 3, 2])
+        target_merged = tf.transpose(tf.reshape(target_t, (-1, shape[1] * shape[3], shape[2])), [0, 2, 1])
 
     with tf.name_scope("Loss"):
         # Obtain the regularization losses
@@ -51,13 +53,8 @@ def define_loss(out, train_y, loss_fn):
         mse = tf.reduce_mean(tf.square(target_merged - out))
 
         # Add some scalar summaries
-        loss_summary = tf.summary.scalar("Loss", loss)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/train', loss_summary)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/test', loss_summary)
-
-        mse_summary = tf.summary.scalar("MeanSquaredError", mse)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/train', mse_summary)
-        tf.add_to_collection(tf.GraphKeys.SUMMARIES + '/test', mse_summary)
+        add_summary(tf.summary.scalar("Loss", loss))
+        add_summary(tf.summary.scalar("MeanSquaredError", mse))
 
     return loss, mse, target
 
@@ -109,7 +106,6 @@ def define_parallel_network(config, excitation0, excitation1):
         dense=config.dense
     )
 
-    #if config.model == Models.PARALLEL:
     with tf.name_scope("MergedStream"):
         # Now we merge these to define the input for the last few layers
         convs_concat = tf.concat([chain0, chain1], 2, name='ConvsConcat')
@@ -133,3 +129,32 @@ def define_inputs(shape):
         excitation0 = tf.placeholder(tf.float32, shape=shape, name="Excitation0")
         excitation1 = tf.placeholder(tf.float32, shape=shape, name="Excitation1")
     return excitation0, excitation1
+
+
+def create_model(config, train_x, train_y, mode='train'):
+    sensor_index = 1
+    slice_index = 3
+    # We take the output depth from the target data
+    output_depth = train_y.shape[slice_index] * train_y.shape[sensor_index]
+    if mode == 'train':
+        # This should be added to our list of n_kernels
+        config.n_kernels.append(output_depth)
+        # Also add this to list containing the number of neurons in fully connected layers
+        config.n_units.append(np.prod(train_y.shape[sensor_index:]))
+    # Now we can set up the network. First we define the input placeholders
+    excitation0, excitation1 = define_inputs((None,) + train_x.shape[-2:])
+    data_std_dev = np.std(train_x)
+    # Optionally use inputs with different ranges
+    excitation0_preprocessed, excitation1_preprocessed = \
+        noise_layer(data_std_dev * config.noise, excitation0), noise_layer(data_std_dev * config.noise, excitation1)
+    if config.multi_range:
+        excitation0_preprocessed, excitation1_preprocessed = define_multi_range_input(
+            config.multi_range_trainable, config.input_factors, excitation0, excitation1
+        )
+
+    # Then, we define the network giving us the output
+    out = {
+        'parallel': define_parallel_network,
+        'cross': define_cross_network
+    }[config.model](config, excitation0_preprocessed, excitation1_preprocessed)
+    return excitation0, excitation1, out

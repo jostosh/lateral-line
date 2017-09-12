@@ -28,16 +28,9 @@ def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d
     :param target1:         The second target matrix
     """
     x_slice = x_mesh3d[:, :, 0]
-    # Compute the conversion of the mesh grid to the indices in the target matrices
-    column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
-
-    # Compute the conversion of the mesh grid to the z-indices in the ta
-    row_indices0 = distance_to_idx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
-    row_indices1 = distance_to_idx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
-    row_indices0_mod = np.mod(row_indices0, 1)
-    row_indices1_mod = np.mod(row_indices1, 1)
-    row_indices0 = row_indices0.astype(np.int64)
-    row_indices1 = row_indices1.astype(np.int64)
+    column_indices, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod = get_index_arrays(
+        cfg, x_slice, y_mesh3d, z_mesh3d
+    )
 
     # Initialize the plot
     init_plot(ax, cfg.sensor_range, cfg.z_range)
@@ -63,6 +56,19 @@ def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d
     ax.legend([scatter1_proxy, scatter2_proxy], ['Reconstructed', 'Target'], numpoints=1)
 
     plt.pause(0.02)
+
+
+def get_index_arrays(cfg, x_slice, y_mesh3d, z_mesh3d):
+    # Compute the conversion of the mesh grid to the indices in the target matrices
+    column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
+    # Compute the conversion of the mesh grid to the z-indices in the ta
+    row_indices0 = distance_to_idx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices1 = distance_to_idx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices0_mod = np.mod(row_indices0, 1)
+    row_indices1_mod = np.mod(row_indices1, 1)
+    row_indices0 = row_indices0.astype(np.int64)
+    row_indices1 = row_indices1.astype(np.int64)
+    return column_indices, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod
 
 
 def plot_velocity_arrows(ax, latline, xs, ys, zs):
@@ -112,6 +118,21 @@ def plot_reconstruction(ax, target0, target1, x_mesh3d, col_indices, row_indices
     :param resolution:          The resolution of the target matrices
     :return:
     """
+    multis = get_3d_density(col_indices, resolution, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod,
+                            target0, target1)  # Now we perform a connected components operation
+    multis = np.array(multis).transpose((1, 2, 0))
+    label_im, nb_labels = ndimage.label(multis > .8)
+    if nb_labels >= 1:
+        # If there are any connected components surviving the threshold of 0.8  we will reconstruct a sphere form that:
+        xs_hat = np.array(ndimage.mean(x_mesh3d, label_im, range(1, nb_labels + 1)))
+        ys_hat = np.array(ndimage.mean(y_mesh3d, label_im, range(1, nb_labels + 1)))
+        zs_hat = np.array(ndimage.mean(z_mesh3d, label_im, range(1, nb_labels + 1)))
+        ax.scatter(xs_hat, ys_hat, zs_hat, c='b', s=60)
+        draw_helper_lines(ax, xs_hat, ys_hat, zs_hat, style='b:')
+
+
+def get_3d_density(col_indices, resolution, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod, target0,
+                   target1):
     multis = []
     for i in range(resolution):
         # Get the row indices of the current slice
@@ -123,22 +144,14 @@ def plot_reconstruction(ax, target0, target1, x_mesh3d, col_indices, row_indices
         rmod1 = row_indices1_mod[:, :, i]
 
         # Take the right entries from the target matrices and interpolate for better accuracy
-        m = ((target0[ri0, col_indices] * (1 - rmod0) + target0[np.minimum(ri0 + 1, resolution - 1), col_indices] * rmod0) *
-             (target1[ri1, col_indices] * (1 - rmod1) + target1[np.minimum(ri1 + 1, resolution - 1), col_indices] * rmod1))
+        m = (
+        (target0[ri0, col_indices] * (1 - rmod0) + target0[np.minimum(ri0 + 1, resolution - 1), col_indices] * rmod0) *
+        (target1[ri1, col_indices] * (1 - rmod1) + target1[np.minimum(ri1 + 1, resolution - 1), col_indices] * rmod1))
 
         # Append element-wise multiplication of the target matrices
         multis.append(m)
 
-    # Now we perform a connected components operation
-    multis = np.array(multis).transpose((1, 2, 0))
-    label_im, nb_labels = ndimage.label(multis > .8)
-    if nb_labels >= 1:
-        # If there are any connected components surviving the threshold of 0.8  we will reconstruct a sphere form that:
-        xs_hat = np.array(ndimage.mean(x_mesh3d, label_im, range(1, nb_labels + 1)))
-        ys_hat = np.array(ndimage.mean(y_mesh3d, label_im, range(1, nb_labels + 1)))
-        zs_hat = np.array(ndimage.mean(z_mesh3d, label_im, range(1, nb_labels + 1)))
-        ax.scatter(xs_hat, ys_hat, zs_hat, c='b', s=60)
-        draw_helper_lines(ax, xs_hat, ys_hat, zs_hat, style='b:')
+    return multis
 
 
 def draw_helper_lines(ax, xs, ys, zs, style='r:'):

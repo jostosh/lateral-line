@@ -4,6 +4,7 @@ import pprint
 
 PROJECT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 DEFAULT_ACTIVATIONS = ['tanh', 'relu', 'relu', 'relu', 'sigmoid']
+VERSION = 'v0.5'
 
 data_config0 = {
     "v": 0.05,
@@ -24,7 +25,8 @@ data_config0 = {
     'min_spheres': 1,
     'max_spheres': 2,
     'sensitivity': 1000,
-    'fnm': 'multisphere'
+    'fnm': 'multisphere',
+    'force': False
 }
 
 experiment_config0 = {
@@ -37,7 +39,7 @@ experiment_config0 = {
     "activations": DEFAULT_ACTIVATIONS,
     "logdir": os.path.join(PROJECT_FOLDER, "tensorboardlogs"),
     "n_epochs": 250,
-    "merge_at": 4,
+    "merge_at": 3,
     "model": "parallel",
     "output_layer": len(DEFAULT_ACTIVATIONS) - 1,
     "loss": "cross_entropy",
@@ -47,11 +49,12 @@ experiment_config0 = {
     'dense': False,
     'multi_range': False,
     'multi_range_trainable': False,
-    'input_factors': [0.1, 1.0, 100.0],
+    'input_factors': [0.1, 1.0, 10.0],
     'noise': 0.01,
     'logdir_base_suffix': 'test',
     'optimizer': 'adam',
-    'fnm': 'multisphere'
+    'fnm': 'multisphere',
+    'tau': 2
 }
 
 
@@ -109,13 +112,17 @@ class ExperimentConfig(object):
         self.logdir_base_suffix = args.logdir_base_suffix
         self.optimizer = args.optimizer
         self.fnm = args.fnm
+        self.tau = args.tau
 
 
 class DataConfig(object):
     """
     This object forces code completion in IDE, which can be very convenient in Python
     """
-    def __init__(self, args):
+    def __init__(self, args=None):
+        if args is None:
+            self.__dict__.update(**data_config0)
+            return
         if isinstance(args, dict):
             self.__dict__.update(**args)
             return
@@ -139,6 +146,7 @@ class DataConfig(object):
         self.max_spheres = args.max_spheres
         self.sensitivity = args.sensitivity
         self.fnm = args.fnm
+        self.force = args.force
 
 
 def init_log_dir(config, by_params=[]):
@@ -148,7 +156,7 @@ def init_log_dir(config, by_params=[]):
     :param by_params:   List of params to use in the generation of the particular TensorBoard logging directory
     :return:            The newly created logging dir
     """
-    base = os.path.join(config.logdir, config.logdir_base_suffix)
+    base = os.path.join(config.logdir, VERSION, config.logdir_base_suffix)
     if by_params:
         base = os.path.join(base, *['{}={}'.format(p, config.__dict__[p]) for p in by_params])
 

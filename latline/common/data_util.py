@@ -1,3 +1,6 @@
+import os
+import pickle
+
 import numpy as np
 
 
@@ -37,3 +40,14 @@ class DataBatcher:
         p = np.random.permutation(self.x.shape[0])
         self.x = self.x[p]
         self.y = self.y[p]
+
+
+def read_data(config):
+    """
+    Reads in the data
+    """
+    path = os.path.join(config.data, "{}.pickle".format(config.fnm))
+    print("Reading data at {}".format(path))
+    with open(path, 'rb') as f:
+        train_x, train_y, test_x, test_y = pickle.load(f)
+    return test_x, test_y, train_x, train_y

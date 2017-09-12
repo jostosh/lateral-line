@@ -2,12 +2,9 @@ from __future__ import absolute_import, division, print_function
 from random import shuffle
 from utils import MediumConfig, PTBModel, chop, run_epoch, run_epoch2
 
-from utils import ptb_iterator, nbest_iterator
-
 import itertools, sys, time
 
 import cPickle as pickle
-import numpy as np
 import tensorflow as tf
 
 import reader

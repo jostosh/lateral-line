@@ -1,5 +1,5 @@
 import numpy as np
-from latline.wavelets import even_wavelet, odd_wavelet
+from .wavelets import even_wavelet, odd_wavelet
 
 
 class Sphere(object):

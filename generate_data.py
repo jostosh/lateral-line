@@ -6,7 +6,7 @@ import numpy as np
 import six.moves.cPickle as pickle
 from tqdm import trange
 
-from common.plot3d import plot3d
+from latline.common.plot3d import plot3d
 from latline.experiment_config import DataConfig, parse_config_args
 from latline.latline import Latline
 import argparse
@@ -15,24 +15,6 @@ import argparse
 def generate_data(cfg, mode='train'):
     """
     This function generates the simulated sensor data given the following parameters:
-
-    Paramaters:
-        :param N_examples:      The number of examples to be generated
-        :param x_range:         The range along x-axis
-        :param y_range:         The range along y-axis
-        :param z_range:         The range along z-axis
-        :param v:               The speed of the sphere
-        :param d_theta_range:   The range of the delta angle
-        :param resolution:      The resolution along for the target matrix (i.e. what the depth should be of the output)
-        :param sigma:           The sigma parameter used in the similarity function
-        :param N_sensors:       The number of sensors per sensor array
-        :param sensor_range:    The range of the sensor array
-        :param display:         Whether to display the simulation in 3D
-        :param tau:             The parameter defining the time-window for multiple frames of excitation as input
-        :param mode:            Whether it is train or test data. Used for the progress bar.
-
-    Return:
-        :return Two multi-dimensional arrays containing the train data and the output targets, respectively
     """
     N_examples = cfg.N_train if mode == 'train' else cfg.N_test
 
@@ -41,17 +23,7 @@ def generate_data(cfg, mode='train'):
     targets  = np.zeros((N_examples, 2, cfg.N_sensors, cfg.resolution))
 
     # s should be interpreted as in Boulogne et al (2015)
-    s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.N_sensors)
-    x_grid = s
-    y_grid = s
-    z_grid = np.linspace(cfg.z_range[0], cfg.z_range[1], cfg.resolution)
-
-    # xx and yy are matrices for evaluating a Gaussian that is centered at a sphere
-    # xx, yy, zz = np.meshgrid(x_grid, y_grid, z_grid)
-
-    x_mesh2d, target_mesh = np.meshgrid(x_grid, z_grid)
-
-    x_mesh3d, y_mesh3d, z_mesh3d = np.meshgrid(x_grid, y_grid, z_grid)
+    s, target_mesh, x_mesh2d, x_mesh3d, y_mesh3d, z_mesh3d = get_meshes(cfg)
 
     # Init lateral line for train data
     latline = Latline(cfg)
@@ -102,6 +74,18 @@ def generate_data(cfg, mode='train'):
     return data, targets
 
 
+def get_meshes(cfg):
+    s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.N_sensors)
+    x_grid = s
+    y_grid = s
+    z_grid = np.linspace(cfg.z_range[0], cfg.z_range[1], cfg.resolution)
+    # xx and yy are matrices for evaluating a Gaussian that is centered at a sphere
+    # xx, yy, zz = np.meshgrid(x_grid, y_grid, z_grid)
+    x_mesh2d, target_mesh = np.meshgrid(x_grid, z_grid)
+    x_mesh3d, y_mesh3d, z_mesh3d = np.meshgrid(x_grid, y_grid, z_grid)
+    return s, target_mesh, x_mesh2d, x_mesh3d, y_mesh3d, z_mesh3d
+
+
 if __name__ == "__main__":
     """
     This script generates the data to be used for the training of the CNNs in train.py
@@ -110,7 +94,7 @@ if __name__ == "__main__":
 
     project_folder = os.path.dirname(os.path.realpath(__file__))
     fnm = os.path.join(project_folder, 'data', '{}.pickle'.format(config.fnm))
-    if os.path.exists(fnm):
+    if not config.force and os.path.exists(fnm):
         print("Already exists")
         exit(0)
 

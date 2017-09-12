@@ -4,22 +4,25 @@ import subprocess
 
 
 sweeps = [
-    #dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_default'),
-    #dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_m3'),
-    #dict(model='parallel', merge_at=2, logdir_base_suffix='parallel_m2'),
-    #dict(model='cross', logdir_base_suffix='cross_default'),
+    dict(model='parallel', merge_at=4, logdir_base_suffix='parallel_default'),
+    dict(model='parallel', merge_at=3, logdir_base_suffix='parallel_m3'),
+    dict(model='parallel', merge_at=2, logdir_base_suffix='parallel_m2'),
+    dict(model='cross', logdir_base_suffix='cross_default'),
     dict(model='parallel', logdir_base_suffix='parallel_multi_range', multi_range=True),
-    dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
+    # dict(model='parallel', logdir_base_suffix='parallel_multi_range_tr', multi_range=True, multi_range_trainable=True),
     dict(model='parallel', logdir_base_suffix='parallel_dense', dense=True),
     dict(model='parallel', lr=1e-4, logdir_base_suffix='l2', loss='l2'),
-    #dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
-    #dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
-    #dict(model='parallel', noise=0.001, logdir_base_suffix='parallel_n0001'),
-    #dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
-    #dict(model='parallel', noise=0.2, logdir_base_suffix='parallel_n02'),
-    #dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow1', lr=1e-3),
-    dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow2', lr=5e-3),
-    dict(model='parallel', optimizer='adam', logdir_base_suffix='adam2', lr=5e-3)
+    dict(model='parallel', merge_at=1, logdir_base_suffix='parallel_m1'),
+    dict(model='parallel', merge_at=0, logdir_base_suffix='parallel_m0'),
+    dict(model='parallel', noise=0.001, logdir_base_suffix='parallel_n0001'),
+    dict(model='parallel', noise=0.1, logdir_base_suffix='parallel_n01'),
+    dict(model='parallel', noise=0.2, logdir_base_suffix='parallel_n02'),
+    # dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow1', lr=1e-3),
+    # dict(model='parallel', optimizer='yellow', logdir_base_suffix='yellow2', lr=5e-3),
+    # dict(model='parallel', optimizer='adam', logdir_base_suffix='adam2', lr=5e-3),
+    dict(model='parallel', merge_at=3, logdir_base_suffix='tau3', tau=3),
+    dict(model='parallel', merge_at=3, logdir_base_suffix='tau2', tau=2),
+    dict(model='parallel', merge_at=3, logdir_base_suffix='tau1', tau=1)
 ]
 
 if __name__ == "__main__":

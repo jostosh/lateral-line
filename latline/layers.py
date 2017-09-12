@@ -1,6 +1,8 @@
 import tensorflow as tf
 from functools import partial
 
+from latline.common.tf_utils import add_summary
+
 
 def get_activation(name):
     """
@@ -38,10 +40,7 @@ def fully_connected(incoming, n_units, activation='relu', name='FullyConnected')
     f = get_activation(activation)
 
     activation = f(tf.nn.xw_plus_b(incoming, weights, bias), name=name+'Out')
-    summary = tf.summary.histogram(name + 'Out', activation)
-    tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/train", summary)
-    tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/test", summary)
-
+    add_summary(tf.summary.histogram(name + 'Out', activation))
     return activation
 
 
@@ -76,11 +75,7 @@ def conv1d(incoming, n_filters, filter_shape, activation='relu', name='Conv1D'):
             )
 
     out = tf.concat(outputs, axis=2)
-
-    summary = tf.summary.histogram(name + 'Out', out)
-    tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/train", summary)
-    tf.add_to_collection(tf.GraphKeys.SUMMARIES + "/test", summary)
-
+    add_summary(tf.summary.histogram(name + 'Out', out))
     return out
 
 
@@ -135,7 +130,7 @@ def binary_cross_entropy_loss(prediction, targets):
 def define_multi_range_input(trainable, input_factors, excitation0, excitation1):
     if trainable:
         input_factors = [tf.Variable(input_fac) for input_fac in input_factors]
-        [tf.summary.scalar('InputFactor{}'.format(i), input_fac) for i, input_fac in enumerate(input_factors)]
+        [add_summary(tf.summary.scalar('InputFactor{}'.format(i), input_fac)) for i, input_fac in enumerate(input_factors)]
 
     excitation0 = tf.concat([excitation0 * input_fac for input_fac in input_factors], axis=2)
     excitation1 = tf.concat([excitation1 * input_fac for input_fac in input_factors], axis=2)

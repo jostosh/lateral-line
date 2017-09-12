@@ -1,16 +1,10 @@
-import gzip
-import os
-import sys
-import time
-
-import tensorflow as tf
-from tensorflow.python.framework import ops
-import numpy as np
-
-import resnet_model
-import cifar_input
-
 import matplotlib
+import numpy as np
+import tensorflow as tf
+
+import cifar_input
+import resnet_model
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 

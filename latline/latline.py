@@ -1,5 +1,5 @@
 import numpy as np
-from latline.sphere import Sphere
+from .sphere import Sphere
 
 
 class Latline(object):
