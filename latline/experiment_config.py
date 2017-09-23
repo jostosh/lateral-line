@@ -31,7 +31,7 @@ data_config0 = {
 
 experiment_config0 = {
     "n_kernels": [32, 64, 64, 64],
-    "n_units": [1024],
+    "n_units": [256],
     "batch_size": 64,
     "kernel_shapes": [[5, 7], [5, 7], [5, 7], [5, 7], 5],
     "half_time": 1000,
@@ -54,7 +54,7 @@ experiment_config0 = {
     'logdir_base_suffix': 'test',
     'optimizer': 'adam',
     'fnm': 'multisphere',
-    'tau': 2
+    'tau': 4
 }
 
 

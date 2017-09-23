@@ -31,7 +31,7 @@ def train(config):
 
     excitation0, excitation1, out = create_model(config, train_x, train_y)
 
-    # Next, we define, the loss that depends on the error + some L2 regularization of the weights
+    # Next, we define the loss that depends on the error + some L2 regularization of the weights
     # For reporting performance, the MSE is used
     loss, mse, target = define_loss(out, train_y, config.loss)
 
@@ -67,18 +67,17 @@ def train(config):
                 }
                 if batch_index % 50 == 0:
                     mean_square_error, l, _, summ, step = sess.run(
-                        [mse, loss, train_step, train_summary, global_step],
-                        feed_dict=fdict)
+                        fetches=[mse, loss, train_step, train_summary, global_step],
+                        feed_dict=fdict
+                    )
                     train_writer.add_summary(summ, global_step=step)
                 else:
-                    mean_square_error, l, _ = sess.run(
-                        [mse, loss, train_step],
-                        feed_dict=fdict)
+                    mean_square_error, l, _ = sess.run([mse, loss, train_step], feed_dict=fdict)
 
             test_x, test_y = data_batcher_test.next_batch()
 
             mean_square_error, summ, step, loss_num = sess.run(
-                [mse, test_summary, global_step, loss],
+                fetches=[mse, test_summary, global_step, loss],
                 feed_dict={
                     excitation0: test_x[:, 0, :, :],
                     excitation1: test_x[:, 1, :, :],

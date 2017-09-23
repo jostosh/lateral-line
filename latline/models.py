@@ -59,16 +59,21 @@ def define_loss(out, train_y, loss_fn):
     return loss, mse, target
 
 
-def define_shared_stream(excitation0, excitation1, n_kernels, kernel_shapes, activations, name="SharedStream",
-                         dense=False):
-    with tf.variable_scope(name) as scope:
-
-        # Build the first chain
-        chain0 = conv_chain(excitation0, n_kernels, kernel_shapes, activations)
-        # Reuse the variables of this chain
-        scope.reuse_variables()
-        # And define the second chain
-        chain1 = conv_chain(excitation1, n_kernels, kernel_shapes, activations)
+def define_dual_stream(excitation0, excitation1, n_kernels, kernel_shapes, activations, name="SharedStream",
+                       shared=True, dense=False):
+    if shared:
+        with tf.variable_scope(name) as scope:
+            # Build the first chain
+            chain0 = conv_chain(excitation0, n_kernels, kernel_shapes, activations, dense=dense)
+            # Reuse the variables of this chain
+            scope.reuse_variables()
+            # And define the second chain
+            chain1 = conv_chain(excitation1, n_kernels, kernel_shapes, activations, dense=dense)
+    else:
+        with tf.variable_scope(name + "0"):
+            chain0 = conv_chain(excitation0, n_kernels, kernel_shapes, activations, dense=dense)
+        with tf.variable_scope(name + "1"):
+            chain1 = conv_chain(excitation0, n_kernels, kernel_shapes, activations, dense=dense)
 
     return chain0, chain1
 
@@ -76,7 +81,7 @@ def define_shared_stream(excitation0, excitation1, n_kernels, kernel_shapes, act
 def define_cross_network(config, excitation0, excitation1):
     """"""
 
-    chain0, chain1 = define_shared_stream(
+    chain0, chain1 = define_dual_stream(
         excitation0, excitation1, n_kernels=config.n_kernels[:config.merge_at],
         kernel_shapes=config.kernel_shapes[:config.merge_at], activations=config.activations[:config.merge_at]
     )
@@ -100,7 +105,7 @@ def define_parallel_network(config, excitation0, excitation1):
     :return:
     """
 
-    chain0, chain1 = define_shared_stream(
+    chain0, chain1 = define_dual_stream(
         excitation0, excitation1, n_kernels=config.n_kernels[:config.merge_at],
         kernel_shapes=config.kernel_shapes[:config.merge_at], activations=config.activations[:config.merge_at],
         dense=config.dense
@@ -138,7 +143,7 @@ def create_model(config, train_x, train_y, mode='train'):
     output_depth = train_y.shape[slice_index] * train_y.shape[sensor_index]
     if mode == 'train':
         # This should be added to our list of n_kernels
-        config.n_kernels.append(output_depth)
+        config.n_kernels.append(output_depth if config.merge_at != 5 else output_depth // 2)
         # Also add this to list containing the number of neurons in fully connected layers
         config.n_units.append(np.prod(train_y.shape[sensor_index:]))
     # Now we can set up the network. First we define the input placeholders

@@ -12,15 +12,7 @@ import matplotlib.pylab as plt
 from latline.experiment_config import DataConfig
 from generate_data import get_meshes
 from latline.common.plot3d import get_index_arrays, get_3d_density
-from plotly.tools import FigureFactory as FF
-
-import plotly.plotly as py
-import plotly.graph_objs as go
-
-from plotly.grid_objs import Grid, Column
-import visvis as vv  # doctest: +SKIP
-
-from skimage import measure
+from mayavi.mlab import contour3d
 
 
 def demo(restore_path):
@@ -75,15 +67,19 @@ def demo(restore_path):
         multis = get_3d_density(column_indices, ex_cfg.resolution, row_indices0, row_indices0_mod, row_indices1,
                                 row_indices1_mod, out_numeric[:24, :], out_numeric[24:, :])
         density3d = np.transpose(np.asarray(multis), (2, 0, 1))
+        contour3d(density3d)
 
-        verts, faces, normals, values = measure.marching_cubes(density3d, 0.8)
-        vv.figure(1)
-        vv.clf()
-        mesh = vv.mesh(np.fliplr(verts), faces, normals, values)
-        mesh.faceColor = (0, 1, 1)
-        app = vv.use()
-        app.Run()
-        exit(0)
+
+
+
+        # verts, faces, normals, values = measure.marching_cubes(density3d, 0.8)
+        # vv.figure(1)
+        # vv.clf()
+        # mesh = vv.mesh(np.fliplr(verts), faces, normals, values)
+        # mesh.faceColor = (0, 1, 1)
+        # app = vv.use()
+        # app.Run()
+        # exit(0)
 
         if not ax_objs:
             ax_objs = []
