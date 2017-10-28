@@ -5,8 +5,9 @@ import tensorflow as tf
 
 from latline.common.data_util import DataBatcher, read_data
 from latline.common.tf_utils import init_summary_writer
-from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
+from latline.experiment_config import ExperimentConfig, init_log_dir
 from latline.models import define_train_step, define_loss, create_model
+from latline.util.config import _get_log_dir
 
 
 def train(config):
@@ -39,7 +40,7 @@ def train(config):
     train_step, global_step = define_train_step(loss, config.lr, config.optimizer)
 
     # Initialize writer for TensorBoard logging
-    logdir = init_log_dir(config)
+    logdir = _get_log_dir(ExperimentConfig)
     print("Saving results to {}".format(logdir))
     train_summary, train_writer = init_summary_writer(logdir, sess, 'train')
     test_summary, test_writer = init_summary_writer(logdir, sess, 'test')
@@ -95,5 +96,6 @@ def train(config):
 
 
 if __name__ == "__main__":
-    config = ExperimentConfig(parse_config_args())
+    ExperimentConfig.load()
+    config = ExperimentConfig
     train(config)

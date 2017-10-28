@@ -36,7 +36,7 @@ def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d
     init_plot(ax, cfg.sensor_range, cfg.z_range)
 
     # Compute the width of the bars
-    width = (cfg.sensor_range[1] - cfg.sensor_range[0]) / cfg.N_sensors
+    width = (cfg.sensor_range[1] - cfg.sensor_range[0]) / cfg.n_sensors
 
     # Plot the excitation pattern
     plot_excitation(ax, fluid_v0, fluid_v1, s, width)
@@ -60,7 +60,7 @@ def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d
 
 def get_index_arrays(cfg, x_slice, y_mesh3d, z_mesh3d):
     # Compute the conversion of the mesh grid to the indices in the target matrices
-    column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.N_sensors).astype(np.int64)
+    column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.n_sensors).astype(np.int64)
     # Compute the conversion of the mesh grid to the z-indices in the ta
     row_indices0 = distance_to_idx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
     row_indices1 = distance_to_idx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)

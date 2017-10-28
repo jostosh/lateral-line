@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from latline.common.tf_utils import add_summary
+from latline.experiment_config import ExperimentConfig
 from yellowfin.tuner_utils.yellowfin import YFOptimizer
 from .layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain, noise_layer, \
     define_multi_range_input
@@ -108,7 +109,7 @@ def define_parallel_network(config, excitation0, excitation1):
     chain0, chain1 = define_dual_stream(
         excitation0, excitation1, n_kernels=config.n_kernels[:config.merge_at],
         kernel_shapes=config.kernel_shapes[:config.merge_at], activations=config.activations[:config.merge_at],
-        dense=config.dense
+        dense=config.dense, shared=ExperimentConfig.share
     )
 
     with tf.name_scope("MergedStream"):
@@ -120,7 +121,6 @@ def define_parallel_network(config, excitation0, excitation1):
         n_kernels[:-1] *= 2
         out = conv_chain(convs_concat, n_kernels, config.kernel_shapes[config.merge_at:],
                          config.activations[config.merge_at:], count_from=config.merge_at)
-
     return out
 
 
