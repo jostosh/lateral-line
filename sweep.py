@@ -27,7 +27,7 @@ sweeps = [
     # dict(model='parallel', logdir_base_suffix='best', multi_range=True, tau=1),
     # dict(model='parallel', merge_at=5, logdir_base_suffix='parallel_m5'),
     # dict(model='parallel', merge_at=3, tau=2, logdir_base_suffix='king', multi_range=True, resolution=128, n_sensors=128),
-    dict(model='parallel', merge_at=5, log_sub='no_sharing', share=False)
+    dict(model='parallel', log_sub='no_sharing', share=False)
 ]
 
 if __name__ == "__main__":
