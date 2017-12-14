@@ -2,7 +2,7 @@
 This project implements different neural network configurations for locating moving spheres under water in a simulated setting.
 
 ## Simulated lateral line
-Fish use their lateral line to locate nearby objects in water, allowing them to swim in schools, escape from predators or to detect pray. This organ senses water displacement. In our experiments we want to achieve detection of an arbitrary number of objects. Therefore, we formulate the prediction as a kind of density estimation. See [https://youtu.be/hSwGsQoFojM](this video) for an example in three dimensions. The paper will reveal how we can reconstruct the entire 3D density from just the measurements of two sensor arrays. All our expirements are conducted with synthesized data. 
+Fish use their lateral line to locate nearby objects in water, allowing them to swim in schools, escape from predators or to detect pray. This organ senses water displacement. In our experiments we want to achieve detection of an arbitrary number of objects. Therefore, we formulate the prediction as a kind of density estimation. See [this video](https://youtu.be/hSwGsQoFojM) for an example in three dimensions. The paper will reveal how we can reconstruct the entire 3D density from just the measurements of two sensor arrays. All our expirements are conducted with synthesized data. 
 
 ## Content of ths repo
 At this moment this is part of a TensorFlow port of the original code in Theano. It currently implements the experiments 
