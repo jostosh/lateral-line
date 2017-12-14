@@ -24,7 +24,7 @@ class DataConfig(Config):
     display = False
     sigma = 0.2
     tau = 4
-    a = 0.05
+    r = 0.05
     min_spheres = 1
     max_spheres = 2
     sensitivity = 1000

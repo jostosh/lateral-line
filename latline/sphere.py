@@ -26,7 +26,7 @@ class Sphere(object):
         self.phi = np.random.uniform(0, 2 * np.pi)
         self.theta = np.random.uniform(0, 2 * np.pi)
         self.s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.n_sensors)
-        self.a = cfg.a
+        self.r = cfg.r
 
         self.fluid_v = None
 
@@ -83,8 +83,8 @@ class Sphere(object):
         Wx2 = np.sqrt(v_orth_x2 ** 2 + vx ** 2)
 
         # Return the fluid velocity at the sensory arrays
-        return (Wx1 * self.a**3 * (odd_psi_x1 * np.sin(phi_x1) - even_psi_x1 * np.cos(phi_x1)) / np.linalg.norm(y1z) ** 3,
-                Wx2 * self.a**3 * (odd_psi_x2 * np.sin(phi_x2) - even_psi_x2 * np.cos(phi_x2)) / np.linalg.norm(y2z) ** 3)
+        return (Wx1 * self.r ** 3 * (odd_psi_x1 * np.sin(phi_x1) - even_psi_x1 * np.cos(phi_x1)) / np.linalg.norm(y1z) ** 3,
+                Wx2 * self.r ** 3 * (odd_psi_x2 * np.sin(phi_x2) - even_psi_x2 * np.cos(phi_x2)) / np.linalg.norm(y2z) ** 3)
 
     def checkEdges(self, oldx, oldy, oldz):
         """
@@ -105,20 +105,20 @@ class Sphere(object):
             p1_star = a - (p1 - a)
             return p1_star, p2_star
 
-        if self.x + self.a > self.x_r[1]:
-            oldx, self.x = mirror_plus(oldx, self.x + self.a, self.x_r[1])
-        elif self.x - self.a < self.x_r[0]:
-            oldx, self.x = mirror_min(oldx, self.x - self.a, self.x_r[0])
+        if self.x + self.r > self.x_r[1]:
+            oldx, self.x = mirror_plus(oldx, self.x + self.r, self.x_r[1])
+        elif self.x - self.r < self.x_r[0]:
+            oldx, self.x = mirror_min(oldx, self.x - self.r, self.x_r[0])
 
-        if self.y + self.a > self.y_r[1]:
-            oldy, self.y = mirror_plus(oldz, self.y + self.a, self.y_r[1])
-        elif self.y - self.a < self.y_r[0]:
-            oldy, self.y = mirror_min(oldz, self.y - self.a, self.y_r[0])
+        if self.y + self.r > self.y_r[1]:
+            oldy, self.y = mirror_plus(oldz, self.y + self.r, self.y_r[1])
+        elif self.y - self.r < self.y_r[0]:
+            oldy, self.y = mirror_min(oldz, self.y - self.r, self.y_r[0])
 
-        if self.z + self.a > self.z_r[1]:
-            oldz, self.z = mirror_plus(oldz, self.z + self.a, self.z_r[1])
-        elif self.z - self.a < self.z_r[0]:
-            oldz, self.z = mirror_min(oldz, self.z - self.a, self.z_r[0])
+        if self.z + self.r > self.z_r[1]:
+            oldz, self.z = mirror_plus(oldz, self.z + self.r, self.z_r[1])
+        elif self.z - self.r < self.z_r[0]:
+            oldz, self.z = mirror_min(oldz, self.z - self.r, self.z_r[0])
 
         # Determine deltas
         dx = self.x - oldx

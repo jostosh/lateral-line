@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from latline.common.data_util import DataBatcher, read_data
-from latline.experiment_config import ExperimentConfig, parse_config_args, init_log_dir
+from latline.experiment_config import ExperimentConfig, init_log_dir
 from latline.models import define_train_step, define_loss, create_model
 import argparse
 import ast
@@ -39,6 +39,7 @@ def demo(restore_path):
 
     # Read the data from storage
     test_x, test_y, _, _ = read_data(config)
+    print("Finished reading data")
 
     # Set up two data batchers that provide a straightforward interface for moving through data batches
     excitation0, excitation1, out = create_model(config, test_x, test_y, mode='test')
@@ -60,10 +61,11 @@ def demo(restore_path):
     # plt.ion()
     # plt.show()
 
-    ex_cfg = DataConfig()
+    DataConfig.load()
+    ex_cfg = DataConfig
     ex_cfg.resolution = 128
     ex_cfg.n_sensors = 128
-    s, target_mesh, x_mesh2d, x_mesh3d, y_mesh3d, z_mesh3d = get_meshes(ex_cfg)
+    s, target_mesh, x_mesh2d, x_mesh3d, y_mesh3d, z_mesh3d = get_meshes()
 
     x_slice = x_mesh3d[:, :, 0]
     column_indices, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod = get_index_arrays(
@@ -73,6 +75,7 @@ def demo(restore_path):
 
     counter = 0
     n_angles = 360
+    print("Running animation")
     for i in range(test_x.shape[0]):
         out_numeric = sess.run(out, feed_dict={
             excitation0: test_x[i:i+1, 0, :, :],
@@ -166,6 +169,9 @@ if __name__ == "__main__":
         with open(os.path.join(os.path.dirname(args.restore_path), 'config.txt'), 'r') as f:
             s = f.read()
         return ast.literal_eval(s)
-    config = ExperimentConfig.from_dict(read_config())
 
+
+    config = ExperimentConfig()
+    for p, v  in read_config().items():
+        config.__setattr__(p, v)
     demo(restore_path=args.restore_path)

@@ -45,15 +45,15 @@ def plot3d(cfg, ax, fluid_v0, fluid_v1, xs, ys, zs, x_mesh3d, y_mesh3d, z_mesh3d
     plot_targets(ax, xs, ys, zs)
 
     # Plot the reconstruction of the spheres using the target matrices
-    plot_reconstruction(ax, target0, target1, x_mesh3d, column_indices, row_indices0_mod, row_indices0,
-                        row_indices1_mod, row_indices1, y_mesh3d, z_mesh3d, cfg.resolution)
+    #plot_reconstruction(ax, target0, target1, x_mesh3d, column_indices, row_indices0_mod, row_indices0,
+    #                    row_indices1_mod, row_indices1, y_mesh3d, z_mesh3d, cfg.resolution)
 
     plot_velocity_arrows(ax, latline, xs, ys, zs)
 
     # Use some plotting proxies to be able to display the legend
-    scatter1_proxy = matplotlib.lines.Line2D([0], [0], linestyle="none", c='b', marker='o')
-    scatter2_proxy = matplotlib.lines.Line2D([0], [0], linestyle="none", c='r', marker='o')
-    ax.legend([scatter1_proxy, scatter2_proxy], ['Reconstructed', 'Target'], numpoints=1)
+    # scatter1_proxy = matplotlib.lines.Line2D([0], [0], linestyle="none", c='b', marker='o')
+    # scatter2_proxy = matplotlib.lines.Line2D([0], [0], linestyle="none", c='r', marker='o')
+    # ax.legend([scatter1_proxy, scatter2_proxy], ['Reconstructed', 'Target'], numpoints=1)
 
     plt.pause(0.02)
 
@@ -80,8 +80,9 @@ def plot_velocity_arrows(ax, latline, xs, ys, zs):
     :param ys:      The spheres' y-coordinates
     :param zs:      The spheres' z-coordinates
     """
-    vx, vy, vz = latline.spheres[0].get_velocity()
-    ax.quiver(xs[0], ys[0], zs[0], vx, vy, vz, length=.2, pivot='tail')
+    for sphere, (xs, ys, zs) in zip(latline.spheres, zip(xs, ys, zs)):
+        vx, vy, vz = sphere.get_velocity()
+        ax.quiver(xs, ys, zs, vx, vy, vz, length=5  , pivot='tail')
 
 
 def init_plot(ax, sensor_range, z_range):
@@ -151,10 +152,10 @@ def get_3d_density(col_indices, resolution, row_indices0, row_indices0_mod, row_
         # Append element-wise multiplication of the target matrices
         multis.append(m)
 
-    return multis
+    return np.sqrt(multis)
 
 
-def draw_helper_lines(ax, xs, ys, zs, style='r:'):
+def draw_helper_lines(ax, xs, ys, zs, style='r'):
     """
     Draws helper lines in the plot to better visualize where the spheres are w.r.t. to the axes of the plot
     :param ax:      The Matplotlib axis object
@@ -163,10 +164,13 @@ def draw_helper_lines(ax, xs, ys, zs, style='r:'):
     :param zs:      The z-coordinates of the spheres
     :param style:   The drawing style
     """
+    d = 0.15
     for x, y, z in zip(xs, ys, zs):
-        ax.plot([x, x], [0, y], style)
-        ax.plot([0, x], [y, y], style)
-        ax.plot([x, x], [y, y], [0, z], style)
+        ax.plot([x-d, x+d], [y, y], style)
+        ax.plot([x, x], [y-d, y+d], style)
+        # ax.plot([x, x], [0, y], style)
+        # ax.plot([0, x], [y, y], style)
+        # ax.plot([x, x], [y, y], [0, z], style)
 
 
 def plot_targets(ax, xs, ys, zs):
