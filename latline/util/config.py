@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 
 from latline.util.parameter import Parameter
@@ -16,7 +17,8 @@ class Config:
         parser = argparse.ArgumentParser()
         custom_parsers = {}
         for arg, default in cls.__dict__.items():
-            if (callable(default) and arg == 'load') or (len(arg) > 2 and '__' == arg[2:] == arg[-2:]):
+            if (callable(default) and arg == 'load') or \
+                    (len(arg) > 2 and '__' == arg[2:] == arg[-2:]):
                 continue
             if isinstance(default, bool):
                 parser.add_argument("--" + arg, action='store_true', dest=arg)
@@ -40,11 +42,17 @@ class Config:
             else:
                 setattr(cls, key, val)
 
-        cls.log_dir = _get_log_dir(Config)
+        # cls.log_dir = setup_logdir(Config)
+
+    @classmethod
+    def load_defaults(cls):
+        for arg, default in cls.__dict__.items():
+            if isinstance(default, Parameter):
+                setattr(cls, arg, default.default())
 
 
-def _get_log_dir(config: Config, base=None):
-    path = base or os.path.join(config.log_base, config.version, config.log_sub)
+def setup_logdir(base, version, subdir):
+    path = os.path.join(base, version, subdir)
     os.makedirs(path, exist_ok=True)
     # Check the current directories in there
     current_dirs = sorted([o for o in os.listdir(path) if os.path.isdir(os.path.join(path, o))])
@@ -59,5 +67,6 @@ def _get_log_dir(config: Config, base=None):
         lastrun     = int(lastdir[3:])
         rundir      = "run%06d" % (lastrun + 1,)
     fulldir = os.path.join(path, rundir)
+    os.makedirs(fulldir)
     return fulldir
 

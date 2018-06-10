@@ -66,7 +66,6 @@ def demo(restore_path):
     ex_cfg.resolution = 128
     ex_cfg.n_sensors = 128
     s, target_mesh, x_mesh2d, x_mesh3d, y_mesh3d, z_mesh3d = get_meshes()
-
     x_slice = x_mesh3d[:, :, 0]
     column_indices, row_indices0, row_indices0_mod, row_indices1, row_indices1_mod = get_index_arrays(
         ex_cfg, x_slice, y_mesh3d, z_mesh3d
@@ -78,8 +77,7 @@ def demo(restore_path):
     print("Running animation")
     for i in range(test_x.shape[0]):
         out_numeric = sess.run(out, feed_dict={
-            excitation0: test_x[i:i+1, 0, :, :],
-            excitation1: test_x[i:i+1, 1, :, :]
+            excitation0: test_x[i:i+1, 0, :, :], excitation1: test_x[i:i+1, 1, :, :]
         })
         out_numeric = np.transpose(out_numeric[0])
 
@@ -133,27 +131,6 @@ def demo(restore_path):
             f.DrawNow()
             if i < 4:
                 time.sleep(0.2)
-        # exit(0)
-
-        #
-        # if not ax_objs:
-        #     ax_objs = []
-        #     ax_objs.append([
-        #         ax[0, 0].imshow(out_numeric[:halfway, :], cmap='viridis'),
-        #         ax[0, 1].imshow(out_numeric[halfway:, :], cmap='viridis')
-        #     ])
-        #     ax_objs.append([
-        #         ax[1, 0].imshow(np.transpose(test_y[i, 0]), cmap='viridis'),
-        #         ax[1, 1].imshow(np.transpose(test_y[i, 1]), cmap='viridis')
-        #     ])
-        # else:
-        #     ax_objs[0][0].set_data(out_numeric[:halfway, :])
-        #     ax_objs[0][1].set_data(out_numeric[halfway:, :])
-        #     ax_objs[1][0].set_data(np.transpose(test_y[i, 0]))
-        #     ax_objs[1][1].set_data(np.transpose(test_y[i, 1]))
-        #
-        # plt.tight_layout()
-        # plt.pause(1/15)
 
 
 if __name__ == "__main__":

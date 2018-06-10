@@ -62,8 +62,10 @@ def get_index_arrays(cfg, x_slice, y_mesh3d, z_mesh3d):
     # Compute the conversion of the mesh grid to the indices in the target matrices
     column_indices = distance_to_idx(x_slice, cfg.sensor_range, cfg.n_sensors).astype(np.int64)
     # Compute the conversion of the mesh grid to the z-indices in the ta
-    row_indices0 = distance_to_idx(np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
-    row_indices1 = distance_to_idx(np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices0 = distance_to_idx(
+        np.sqrt((y_mesh3d + .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
+    row_indices1 = distance_to_idx(
+        np.sqrt((y_mesh3d - .5) ** 2 + z_mesh3d ** 2), cfg.z_range, cfg.resolution)
     row_indices0_mod = np.mod(row_indices0, 1)
     row_indices1_mod = np.mod(row_indices1, 1)
     row_indices0 = row_indices0.astype(np.int64)
@@ -101,8 +103,14 @@ def init_plot(ax, sensor_range, z_range):
     ax.set_zlabel(r'$z$')
 
 
-def plot_reconstruction(ax, target0, target1, x_mesh3d, col_indices, row_indices0_mod, row_indices0, row_indices1_mod,
-                        row_indices1, y_mesh3d, z_mesh3d, resolution):
+def plot_reconstruction(ax,
+                        target0, target1,
+                        x_mesh3d,
+                        col_indices,
+                        row_indices0_mod, row_indices0,
+                        row_indices1_mod, row_indices1,
+                        y_mesh3d, z_mesh3d,
+                        resolution):
     """
     Plots the reconstruction of the spheres from the target matrices.
     :param ax:                  The matplotlib axis object
@@ -124,7 +132,8 @@ def plot_reconstruction(ax, target0, target1, x_mesh3d, col_indices, row_indices
     multis = np.array(multis).transpose((1, 2, 0))
     label_im, nb_labels = ndimage.label(multis > .8)
     if nb_labels >= 1:
-        # If there are any connected components surviving the threshold of 0.8  we will reconstruct a sphere form that:
+        # If there are any connected components surviving the threshold of 0.8  we will
+        # reconstruct a sphere form that:
         xs_hat = np.array(ndimage.mean(x_mesh3d, label_im, range(1, nb_labels + 1)))
         ys_hat = np.array(ndimage.mean(y_mesh3d, label_im, range(1, nb_labels + 1)))
         zs_hat = np.array(ndimage.mean(z_mesh3d, label_im, range(1, nb_labels + 1)))

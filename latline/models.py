@@ -3,7 +3,6 @@ import tensorflow as tf
 
 from latline.common.tf_utils import add_summary
 from latline.experiment_config import ExperimentConfig
-from yellowfin.tuner_utils.yellowfin import YFOptimizer
 from .layers import binary_cross_entropy_loss, conv_chain, fully_connected_chain, noise_layer, \
     define_multi_range_input
 
@@ -14,19 +13,18 @@ def define_train_step(loss, lr, optimizer):
     """
     with tf.name_scope("TrainStep"):
         global_step = tf.Variable(0, name='global_step', trainable=False)
-        if optimizer == 'yellow':
-            train_step = YFOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
-        elif optimizer == 'adam':
+        if optimizer == 'adam':
             train_step = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss, global_step=global_step)
         else:
-            raise ValueError("{} not a valid optimizer, choose between 'adam' or 'yellow'".format(optimizer))
+            raise ValueError("{} not a valid optimizer, choose between 'adam', ...".format(
+                optimizer))
     return train_step, global_step
 
 
-def define_loss(out, train_y, loss_fn):
+def define_loss(logits, train_y, loss_fn):
     """
     Defines the loss plus performance statistics and returns target placeholder
-    :param out:
+    :param logits:
     :param train_y:
     :return:
     """
@@ -34,7 +32,8 @@ def define_loss(out, train_y, loss_fn):
         shape = train_y.shape
         target = tf.placeholder(tf.float32, (None,) + shape[1:], name="Target")
         target_t = tf.transpose(target, [0, 1, 3, 2])
-        target_merged = tf.transpose(tf.reshape(target_t, (-1, shape[1] * shape[3], shape[2])), [0, 2, 1])
+        target_merged = tf.transpose(
+            tf.reshape(target_t, (-1, shape[1] * shape[3], shape[2])), [0, 2, 1])
 
     with tf.name_scope("Loss"):
         # Obtain the regularization losses
@@ -42,16 +41,20 @@ def define_loss(out, train_y, loss_fn):
 
         # The total loss is defined as the L2 loss of the targets together with the L2 losses
         if loss_fn == 'cross_entropy':
-            loss = binary_cross_entropy_loss(targets=target_merged, prediction=out)
+            loss = binary_cross_entropy_loss(targets=target_merged, prediction=tf.nn.sigmoid(logits))
+        elif loss_fn == "cross_ent_logits":
+            loss = tf.reduce_mean(tf.reduce_sum(
+                tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=target_merged),
+                axis=list(range(1, len(logits.shape)))))
         elif loss_fn == 'l2':
-            loss = tf.nn.l2_loss(target_merged - out)
+            loss = tf.nn.l2_loss(target_merged - tf.nn.sigmoid(logits))
         else:
             raise ValueError("Unknown loss function")
 
         loss += tf.add_n(reg_losses)
 
         # For reporting performance, we use the mean squared error
-        mse = tf.reduce_mean(tf.square(target_merged - out))
+        mse = tf.reduce_mean(tf.square(target_merged - logits))
 
         # Add some scalar summaries
         add_summary(tf.summary.scalar("Loss", loss))
@@ -158,8 +161,8 @@ def create_model(config, train_x, train_y, mode='train'):
         )
 
     # Then, we define the network giving us the output
-    out = {
+    logits = {
         'parallel': define_parallel_network,
         'cross': define_cross_network
     }[config.model](config, excitation0_preprocessed, excitation1_preprocessed)
-    return excitation0, excitation1, out
+    return excitation0, excitation1, logits, tf.nn.sigmoid(logits, name="LogitsToProb")

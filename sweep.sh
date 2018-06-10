@@ -13,5 +13,8 @@ module load tensorflow
 source $HOME/envs/ll/bin/activate
 cd $HOME/lateral-line
 
-python3 ./generate_data.py $*
-srun python3 ./sweep.py $*
+for i in `seq 0 4`;
+do
+        python3 ./generate_data.py --fnm lateral_line_simulated${i}
+        srun python3 ./sweep.py --fnm lateral_line_simulated${i} $*
+done

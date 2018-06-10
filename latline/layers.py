@@ -13,7 +13,8 @@ def get_activation(name):
     return {
         'relu': tf.nn.relu,
         'sigmoid': tf.nn.sigmoid,
-        'tanh': tf.nn.tanh
+        'tanh': tf.nn.tanh,
+        'linear': tf.identity
     }[name]
 
 

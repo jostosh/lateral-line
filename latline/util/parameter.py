@@ -16,17 +16,21 @@ class Parameter:
         :param help:        A brief description of what the argument does
         """
         assert all(k in ['action', 'nargs', 'default', 'type', 'choices', 'required', 'help'] for k in kwargs.keys())
-        self.options = kwargs
+        self._options = kwargs
         self.parser = parser
 
+    @property
     def options(self):
-        return self.options
+        return self._options
 
     def has_parser(self):
         return self.parser is not None
 
     def parse(self, arg):
         return self.parser.parse(arg)
+
+    def default(self):
+        return self._options['default']
 
 
 class Parser(abc.ABC):
