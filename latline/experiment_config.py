@@ -6,7 +6,7 @@ from latline.util.parameter import Parameter, LiteralParser
 
 PROJECT_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 DEFAULT_ACTIVATIONS = ['tanh', 'relu', 'relu', 'relu', 'linear']
-VERSION = 'v0.5'
+VERSION = 'v0.6'
 
 
 class DataConfig(Config):
@@ -47,7 +47,7 @@ class ExperimentConfig(Config):
         nargs='+', choices=['tanh', 'relu', 'sigmoid', 'linear']
     )
     data = os.path.join(PROJECT_FOLDER, 'data')
-    n_epochs = 5
+    n_epochs = 250
     merge_at = 3
     model = 'parallel'
     output_layer = len(DEFAULT_ACTIVATIONS) - 1
