@@ -54,7 +54,7 @@ def define_loss(logits, train_y, loss_fn):
         loss += tf.add_n(reg_losses)
 
         # For reporting performance, we use the mean squared error
-        mse = tf.reduce_mean(tf.square(target_merged - logits))
+        mse = tf.reduce_mean(tf.square(target_merged - tf.nn.sigmoid(logits)))
 
         # Add some scalar summaries
         add_summary(tf.summary.scalar("Loss", loss))

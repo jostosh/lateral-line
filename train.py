@@ -15,6 +15,7 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.spatial import distance_matrix
 import json
 from tqdm import trange
+import scipy.stats as stats
 
 
 def train(config):
@@ -61,7 +62,6 @@ def train(config):
     with open(os.path.join(logdir, "params.json"), 'w') as f:
         json.dump({k: str(v) for k, v in ExperimentConfig.__dict__.items()}, fp=f, indent=4)
 
-
     with tf.Session() as sess:
         train_summary, train_writer = init_summary_writer(logdir, sess, 'train')
         test_summary, test_writer = init_summary_writer(logdir, sess, 'test')
@@ -78,7 +78,7 @@ def train(config):
         logpath = os.path.join(logdir, 'results.csv')
         print("Logging at {}".format(logpath))
         with open(logpath, 'w') as f:
-            f.write('epoch,mse,loss,avg_dist,mean_low,mean_high,count_correct\n')
+            f.write('epoch,mse,loss,avg_dist,avg_dist_transpose,mean_low,mean_high,count_correct\n')
             # Now we start training!
             pbar_epoch = trange(config.n_epochs)
             test_losses = None
@@ -106,10 +106,10 @@ def train(config):
                             [mse_op, loss_op, train_op], feed_dict=fdict)
                     pbar_batch.set_description("Loss={0:.4f}".format(loss_out))
 
-
                 # Test the whole
                 test_losses, test_mses = [], []
-                test_count_low, test_count_high, test_count_correct, test_dists = [], [], [], []
+                test_count_low, test_count_high, test_count_correct, test_dists, \
+                    test_dists_transpose = [], [], [], [], []
                 pbar_batch_test = data_batcher_test.iterate_one_epoch()
                 for _ in pbar_batch_test:
                     test_excitations, test_targets, test_xyz = data_batcher_test.next_batch()
@@ -125,22 +125,23 @@ def train(config):
                     test_losses.append(loss_out)
                     test_mses.append(mse_out)
 
-                    count_low, count_high, count_correct, mean_dist = \
-                        localizer.localize(density_pred_out, test_xyz)
-                    test_count_low.extend(count_low)
-                    test_count_high.extend(count_high)
-                    test_count_correct.append(count_correct)
-                    test_dists.append(mean_dist)
+                    if epoch >= config.n_epochs - 1:
+                        count_low, count_high, count_correct, mean_dist, mean_dist_transpose = \
+                            localizer.localize(density_pred_out, test_xyz)
+                        test_count_low.extend(count_low)
+                        test_count_high.extend(count_high)
+                        test_count_correct.append(count_correct)
+                        test_dists.append(mean_dist)
+                        test_dists_transpose.append(mean_dist_transpose)
                 test_mse = np.mean(test_mses)
                 test_loss = np.mean(test_losses)
                 test_cnt_low = np.mean(test_count_low)
                 test_cnt_high = np.mean(test_count_high)
                 test_cnt_correct = np.mean(test_count_correct)
                 test_dist = np.mean(test_dists)
-                # print("Epoch ({}/{}), Test MSE: {}, Test loss: {}, Test average dist: {}".format(
-                #     epoch, config.n_epochs, test_mse, test_loss, test_dist))
+                test_dist_transpose = np.mean(test_dists_transpose)
                 f.write(','.join([str(n) for n in [
-                    epoch, test_mse, test_loss, test_dist,
+                    epoch, test_mse, test_loss, test_dist, test_dist_transpose,
                     test_cnt_low, test_cnt_high, test_cnt_correct]]) + '\n')
                 f.flush()
 
@@ -159,11 +160,29 @@ class Localizer:
         self.row_ind1, self.row_ind1_mod = \
             get_index_arrays(DataConfig, x_slice, self.y_mesh3d, self.z_mesh3d)
 
+        self.x_mesh2d, self.z_mesh2d = np.meshgrid(
+            np.linspace(*DataConfig.x_range, num=DataConfig.n_sensors),
+            np.linspace(*DataConfig.z_range, num=DataConfig.resolution))
+
+        self.z_mesh_array0 = np.sqrt((self.z_mesh3d ** 2 + (self.y_mesh3d - 0.5) ** 2))
+        self.z_mesh_array1 = np.sqrt((self.z_mesh3d ** 2 + (self.y_mesh3d + 0.5) ** 2))
+
+        self.xz_mesh_array0 = np.stack((self.x_mesh3d, self.z_mesh_array0), axis=-1)
+        self.xz_mesh_array1 = np.stack((self.x_mesh3d, self.z_mesh_array1), axis=-1)
+
+    @staticmethod
+    def gaussian_connected_components(density):
+        filtered = gaussian_filter(density, DataConfig.sigma, mode='constant')
+        connected_components, num_labels = ndimage.label(
+            np.greater(filtered, config.localization_threshold))
+        return connected_components, num_labels
+
     def localize(self, density, xyz):
         density0, density1 = density[..., :config.resolution], density[..., config.resolution:]
 
         localization_count_diffs = []
         localization_errors = []
+        localization_errors_transpose = []
         for d0, d1, (xs, ys, zs) in zip(density0, density1, xyz):
 
             density_3d = get_3d_density(
@@ -200,13 +219,32 @@ class Localizer:
                 localization_count_diffs.append(num_labels - len(xs))
                 localization_errors.append(distance_average)
 
+                # Turn around ys and xs....
+                target_mat = np.stack(zip(ys, xs, zs))
+
+                distance_mat = distance_matrix(target_mat, prediction_mat)
+
+                distance_ind = np.argsort(distance_mat, axis=1)
+                if len(np.unique(distance_ind[:, 0])) == len(xs):
+                    distance_average = np.mean(np.min(distance_mat, axis=1))
+                else:
+                    distance_sort = np.sort(distance_mat, axis=1)
+                    winning_first = np.argmin(distance_sort[:, 0])
+                    distance_average = (distance_sort[winning_first, 0] +
+                                        distance_sort[1 - winning_first, 1 if num_labels > 1 else 0]
+                                        ) / 2
+                localization_errors_transpose.append(distance_average)
+
         localization_errors = np.mean(np.array(localization_errors)) if localization_errors else 0.0
         localization_count_diffs = np.array(localization_count_diffs)
+
+        localization_errors_transpose = np.mean(np.array(localization_errors_transpose)) if localization_errors_transpose else 0.0
 
         average_larger = localization_count_diffs[localization_count_diffs > 0]
         average_lower = localization_count_diffs[localization_count_diffs < 0]
         average_correct = np.mean(localization_count_diffs == 0)
-        return average_lower, average_larger, average_correct, localization_errors
+
+        return average_lower, average_larger, average_correct, localization_errors, localization_errors_transpose
 
 
 if __name__ == "__main__":
