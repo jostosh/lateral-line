@@ -16,11 +16,11 @@ class DataConfig(Config):
     z_range = Parameter(default=[0, 1.5], nargs=2, type=float)
     d_theta_range = Parameter(default=[-0.5, 0.5], nargs=2, type=float)
     sensor_range = Parameter(default=[-1.5, 1.5], nargs=2, type=float)
-    resolution = 24
+    resolution = 64
     N_train = 10000
     N_test = 2000
     N_val = 2000
-    n_sensors = 32
+    n_sensors = 128
     display = False
     sigma = 0.2
     tau = 4
@@ -53,7 +53,7 @@ class ExperimentConfig(Config):
     output_layer = len(DEFAULT_ACTIVATIONS) - 1
     loss = 'cross_ent_logits'
     lr = 1e-3
-    n_sensors = 32
+    n_sensors = 128
     fc_activations = Parameter(
         default=['relu', 'linear'], nargs='+', type=str, choices=['relu', 'sigmoid', 'linear'])
     dense = False
@@ -65,7 +65,7 @@ class ExperimentConfig(Config):
     optimizer = 'adam'
     fnm = 'multisphere'
     tau = 4
-    resolution = 24
+    resolution = 64
     share = True
     localization_threshold = 0.75
 
@@ -74,7 +74,8 @@ def init_log_dir(config, by_params=[]):
     """
     Automatically creates a logging dir for TensorBoard logging
     :param config:      ExperimentConfig object
-    :param by_params:   List of params to use in the generation of the particular TensorBoard logging directory
+    :param by_params:   List of params to use in the generation of the particular TensorBoard
+        logging directory
     :return:            The newly created logging dir
     """
     base = os.path.join(config.logdir, VERSION, config.logdir_base_suffix)
