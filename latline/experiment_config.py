@@ -13,7 +13,7 @@ class DataConfig(Config):
     v = 0.05
     x_range = Parameter(default=[-1, 1], nargs=2, type=float)
     y_range = Parameter(default=[-1, 1], nargs=2, type=float)
-    z_range = Parameter(default=[0, 1.5], nargs=2, type=float)
+    z_range = Parameter(default=[0, 2.0], nargs=2, type=float)
     d_theta_range = Parameter(default=[-0.5, 0.5], nargs=2, type=float)
     sensor_range = Parameter(default=[-1.5, 1.5], nargs=2, type=float)
     resolution = 64
@@ -65,7 +65,7 @@ class ExperimentConfig(Config):
     optimizer = 'adam'
     fnm = 'multisphere'
     tau = 4
-    resolution = 64
+    resolution = 84
     share = True
     localization_threshold = 0.75
 

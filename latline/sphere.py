@@ -15,14 +15,14 @@ class Sphere(object):
         """
         self.x = np.random.uniform(cfg.x_range[0], cfg.x_range[1])
         self.y = np.random.uniform(cfg.y_range[0], cfg.y_range[1])
-        self.z = np.random.uniform(cfg.z_range[0], cfg.z_range[1] * 2 / 3)
+        self.z = np.random.uniform(cfg.z_range[0], cfg.z_range[1] / 2)
 
         self.d_theta_range = cfg.d_theta_range
         self.v = cfg.v
 
         self.x_r = cfg.x_range
         self.y_r = cfg.y_range
-        self.z_r = np.array(cfg.z_range) * 2 / 3
+        self.z_r = np.array(cfg.z_range) / 2
         self.phi = np.random.uniform(0, 2 * np.pi)
         self.theta = np.random.uniform(0, 2 * np.pi)
         self.s = np.linspace(cfg.sensor_range[0], cfg.sensor_range[1], cfg.n_sensors)
